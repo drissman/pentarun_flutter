@@ -90,7 +90,7 @@ class _AthleteFormState extends State<AthleteForm> {
                 ),
               ),
               _field(
-                label: 'ACIER (KG)',
+                label: 'ACIER TOTAL 2 KB (KG)',
                 width: _itemWidth(constraints.maxWidth, crossCount),
                 child: DropdownButtonFormField<int>(
                   initialValue: state.formKb,
