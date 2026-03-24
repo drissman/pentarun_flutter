@@ -52,7 +52,7 @@ class SummaryScreen extends StatelessWidget {
               ),
               const SizedBox(height: 32),
 
-              // Podium (si ≥ 2 athlètes terminés)
+              // SPEC-KIT §4.3 — Podium affiché si ≥ 2 athlètes terminés
               if (finishedCount >= 2) ...[
                 _PodiumCard(ranked: ranked),
                 const SizedBox(height: 32),
@@ -129,6 +129,7 @@ class _PodiumCard extends StatelessWidget {
     final Color borderColor;
     final String rankLabel;
 
+    // SPEC-KIT §6 — Couleurs podium : Or(ambre) / Argent / Bronze / border2 / DNF(rouge)
     if (rank == 1) {
       borderColor = A2Colors.ambre;
       rankLabel = '1er';
@@ -292,7 +293,8 @@ class _ActionTile extends StatelessWidget {
                   label,
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: enabled ? color : A2Colors.gris2,
+                    // SPEC-KIT §6 A2UI ERRATA v1.4 — gris2 interdit pour texte (WCAG AA)
+                    color: enabled ? color : A2Colors.gris1,
                     fontWeight: FontWeight.w900,
                     fontSize: 10,
                     letterSpacing: 1,

@@ -196,7 +196,8 @@ class AthleteResultCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'BILAN MÉTABOLIQUE (h_oh=H×1.15 ✓)',
+                    // SPEC-KIT §3.2 ERRATA v1.4 — h_oh=H×1.22 (recalibré)
+                    'BILAN MÉTABOLIQUE (h_oh=H×1.22 ✓)',
                     style: TextStyle(
                       color: A2Colors.ambre,
                       fontWeight: FontWeight.w900,
@@ -303,8 +304,9 @@ class AthleteResultCard extends StatelessWidget {
       ),
       child: Column(
         children: [
+          // SPEC-KIT §3.2 ERRATA v1.4 — EPOC HIIT : 1.15 → 1.30
           const Text(
-            'TOTAL EPOC ×1.15',
+            'TOTAL EPOC ×1.30',
             style: TextStyle(
               color: A2Colors.ambre,
               fontWeight: FontWeight.w900,

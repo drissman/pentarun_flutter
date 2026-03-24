@@ -20,7 +20,7 @@ class _RacingScreenState extends State<RacingScreen>
   void initState() {
     super.initState();
     _ticker = createTicker((_) {
-      // Anti-drift: always compute from DateTime.now() - startTime
+      // SPEC-KIT §4.2 — Moteur Anti-Drift : timestamp absolu (DateTime.now() - startTime)
       AppStateProvider.of(context).updateElapsed();
     });
     _ticker.start();
@@ -78,6 +78,7 @@ class _RacingScreenState extends State<RacingScreen>
                     ],
                   );
 
+                  // SPEC-KIT §6 A2UI — Chrono monospace obligatoire (anti-tremblement)
                   final chrono = Text(
                     TimeFormatter.format(state.elapsedMs),
                     style: const TextStyle(
@@ -144,6 +145,7 @@ class _RacingScreenState extends State<RacingScreen>
           Expanded(
             child: LayoutBuilder(
               builder: (context, constraints) {
+                // SPEC-KIT §6 A2UI — Responsive : 1col <560px | 2col <900px | 3col ≥900px
                 final cols = constraints.maxWidth > 900
                     ? 3
                     : constraints.maxWidth > 560

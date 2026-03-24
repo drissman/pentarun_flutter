@@ -62,17 +62,41 @@ Le SPEC-KIT inclut un mécanisme d'élagage explicite : toute fonctionnalité d�
 
 Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a un périmètre fermé — on ne commence pas la Phase N+1 tant que la Phase N n'est pas en statut `✅`.
 
-### Phase actuelle : 1.3
+### Phase actuelle : 1.4
+
+#### Phase 1.3 — Dashboard UX ✅
 
 | Fonctionnalité | Référence OPENSPEC | Statut |
 |---|---|---|
-| Prédicteur Énergétique Visuel | §4.1 | 🔧 Implémenté v1.3 |
-| Bague de Progression Circulaire | §4.2 | 🔧 Implémenté v1.3 |
-| Splits intermédiaires live | §4.2 | 🔧 Implémenté v1.3 |
-| Podium Classement | §4.3 | 🔧 Implémenté v1.3 |
-| Graphique Splits par Station | §4.3 | 🔧 Implémenté v1.3 |
-| Panneau Actions Rapides | §4.3 | 🔧 Implémenté v1.3 |
-| Couleurs Podium (Or/Argent/Bronze) | §6 | 🔧 Implémenté v1.3 |
+| Prédicteur Énergétique Visuel | §4.1 | ✅ Implémenté v1.3 |
+| Bague de Progression Circulaire | §4.2 | ✅ Implémenté v1.3 |
+| Splits intermédiaires live | §4.2 | ✅ Implémenté v1.3 |
+| Podium Classement | §4.3 | ✅ Implémenté v1.3 |
+| Graphique Splits par Station | §4.3 | ✅ Implémenté v1.3 |
+| Panneau Actions Rapides | §4.3 | ✅ Implémenté v1.3 |
+| Couleurs Podium (Or/Argent/Bronze) | §6 | ✅ Implémenté v1.3 |
+
+#### Phase 1.4 — ERRATA Biomécanique & Lisibilité ✅
+
+| Fonctionnalité | Référence OPENSPEC | Statut |
+|---|---|---|
+| Correction η musculaire (0.20) | §3.2 ERRATA v1.4 | ✅ Implémenté v1.4 |
+| Correction facteur excentrique (×1.25) | §3.2 ERRATA v1.4 | ✅ Implémenté v1.4 |
+| Correction EPOC HIIT (1.15→1.30) | §3.2 ERRATA v1.4 | ✅ Implémenté v1.4 |
+| Recalibration hauteurs KB (rack/oh/dip) | §3.2 ERRATA v1.4 | ✅ Implémenté v1.4 |
+| Lisibilité WCAG AA (gris2→gris1) | §6 ERRATA v1.4 | ✅ Implémenté v1.4 |
+| Commentaires traçabilité SPEC-KIT | §5.2 | ✅ Implémenté v1.4 |
+| Affichage EPOC ×1.30 (était ×1.15) | §3.2 ERRATA v1.4 | ✅ Corrigé v1.4 |
+| Affichage h_oh=H×1.22 (était ×1.15) | §3.2 ERRATA v1.4 | ✅ Corrigé v1.4 |
+
+#### Phase 2 — Planifiée 📋
+
+| Fonctionnalité | Référence OPENSPEC | Statut |
+|---|---|---|
+| Export PDF fiche résultat | §4.3 | 📋 Phase 2 |
+| Partage résultats | §4.3 | 📋 Phase 2 |
+| Build mobile (Android/iOS) | §7.3 | 📋 Phase 2 |
+| VMA / Vitesse Critique | §7.2 Élagage | 📋 Module Coaching Solaris Phase 4 |
 
 ---
 

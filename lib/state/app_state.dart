@@ -7,6 +7,7 @@ import 'package:pentarun_flutter/models/kettlebell.dart';
 import 'package:pentarun_flutter/models/level.dart';
 import 'package:pentarun_flutter/models/station.dart';
 
+// SPEC-KIT §4 — Machine à états : §4.1→setup | §4.2→racing | §4.3→summary
 enum AppPhase { setup, racing, summary }
 
 class AppState extends ChangeNotifier {
@@ -29,6 +30,7 @@ class AppState extends ChangeNotifier {
   String? get toast => _toast;
 
   // Form state
+  // SPEC-KIT §5.1 — Valeurs par défaut athlète référence CHALLENGER (75kg, 175cm, 24kg KB)
   String formName = '';
   Level formLevel = Level.decouverte;
   int formKb = 16;
@@ -113,6 +115,7 @@ class AppState extends ChangeNotifier {
           currentStation: Station.count,
           status: AthleteStatus.finished,
           finalTimeMs: rawMs,
+          // SPEC-KIT §5.3 — Score officiel : T.brut(ms) × coefficient KB
           officialScore: rawMs * a.coeff,
         );
       }
@@ -148,6 +151,7 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
+  // SPEC-KIT §4.3 — Transition auto vers summary quand tous les athlètes sont finished
   void _checkAutoSummary() {
     if (_phase == AppPhase.racing &&
         _athletes.isNotEmpty &&
@@ -198,6 +202,7 @@ class AppState extends ChangeNotifier {
         level: formLevel,
       );
 
+  // SPEC-KIT §4.3 — Classement : officialScore ASC, ex-æquo par finalTimeMs, DNF en derniers
   List<Athlete> get rankedAthletes {
     final finished =
         _athletes.where((a) => a.status == AthleteStatus.finished).toList();

@@ -177,7 +177,7 @@ class AthleteRaceCard extends StatelessWidget {
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            // Bague de progression circulaire
+            // SPEC-KIT §4.2 — Bague de Progression Circulaire : 72×72px min
             SizedBox(
               width: 72,
               height: 72,
@@ -244,7 +244,7 @@ class AthleteRaceCard extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 12),
-        // FAT FINGER — Valider
+        // SPEC-KIT §6 — Fat Finger : ≥ 9rem (144px) obligatoire pour bouton VALIDER
         SizedBox(
           width: double.infinity,
           height: 144,
@@ -364,7 +364,7 @@ class _StationRingPainter extends CustomPainter {
     final center = Offset(size.width / 2, size.height / 2);
     final radius = (size.width - 10) / 2;
 
-    // Fond
+    // SPEC-KIT §4.2 — Bague : stroke 6px, fond #2A2A2A (A2Colors.border2)
     final bgPaint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6
@@ -378,6 +378,7 @@ class _StationRingPainter extends CustomPainter {
       ..style = PaintingStyle.stroke
       ..strokeWidth = 6
       ..strokeCap = StrokeCap.round
+      // SPEC-KIT §4.2 — Progression : cyan en cours → vert quand terminé
       ..color = current >= total ? A2Colors.vert : A2Colors.cyan;
 
     final sweepAngle = (current / total) * 2 * math.pi;
