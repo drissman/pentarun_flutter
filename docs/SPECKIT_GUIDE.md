@@ -89,14 +89,51 @@ Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a u
 | Affichage EPOC ×1.30 (était ×1.15) | §3.2 ERRATA v1.4 | ✅ Corrigé v1.4 |
 | Affichage h_oh=H×1.22 (était ×1.15) | §3.2 ERRATA v1.4 | ✅ Corrigé v1.4 |
 
-#### Phase 2 — Planifiée 📋
+#### Phase 2.1 — Identité & Profils 📋
 
-| Fonctionnalité | Référence OPENSPEC | Statut |
+| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
 |---|---|---|
-| Export PDF fiche résultat | §4.3 | 📋 Phase 2 |
-| Partage résultats | §4.3 | 📋 Phase 2 |
-| Build mobile (Android/iOS) | §7.3 | 📋 Phase 2 |
-| VMA / Vitesse Critique | §7.2 Élagage | 📋 Module Coaching Solaris Phase 4 |
+| Auth email / Google OAuth | §3.1 | 📋 Phase 2.1 |
+| Profil athlète persistant | §3.3 | 📋 Phase 2.1 |
+| Catégories d'âge (Junior→Master 3) | §4.2 | 📋 Phase 2.1 |
+| coeff_age + coeff_sexe | §5.4 §5.5 | 📋 Phase 2.1 |
+| scorePlateforme | §5.2 | 📋 Phase 2.1 |
+| Historique performances | §4.1 | 📋 Phase 2.1 |
+
+#### Phase 2.2 — Compétition Connectée 📋
+
+| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+|---|---|---|
+| Multi-vagues temps réel (Supabase) | §7.1 | 📋 Phase 2.2 |
+| Vue directeur compétition | §7.2 | 📋 Phase 2.2 |
+| Gestion offline / reconnexion | §7.3 | 📋 Phase 2.2 |
+| Résultats live spectateurs | §7.2 | 📋 Phase 2.2 |
+
+#### Phase 2.3 — Classements & Communauté 📋
+
+| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+|---|---|---|
+| Ranking général segmenté | §5.6 | 📋 Phase 2.3 |
+| Records plateforme par catégorie | §5.6 | 📋 Phase 2.3 |
+| Progression individuelle | §5.6 | 📋 Phase 2.3 |
+| Export PDF fiche résultat | §9.4 Élagage | 📋 Phase 2.3 |
+
+#### Phase 3 — HR & Coefficients Dynamiques 📋
+
+| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+|---|---|---|
+| Intégration BLE GATT 0x180D | §6.2 | 📋 Phase 3 |
+| Capture FC temps réel | §6.3 | 📋 Phase 3 |
+| Calcul TRIMP (Bannister 1991) | §6.4 | 📋 Phase 3 |
+| coeff_physio dynamique | §6.5 | 📋 Phase 3 |
+| scorePlateforme_HR | §6.6 | 📋 Phase 3 |
+
+#### Phase 4+ — Infrastructure & Coaching 📋
+
+| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+|---|---|---|
+| Migration VPS auto-hébergé | §2.2 | 📋 Phase 4 |
+| Module Coaching Solaris (VMA, VO2) | §9.4 Élagage | 📋 Phase 5 |
 
 ---
 
