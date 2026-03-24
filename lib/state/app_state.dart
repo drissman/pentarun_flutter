@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/engine/energy_calculator.dart';
 import 'package:pentarun_flutter/models/athlete.dart';
+import 'package:pentarun_flutter/models/energy_breakdown.dart';
 import 'package:pentarun_flutter/models/kettlebell.dart';
 import 'package:pentarun_flutter/models/level.dart';
 import 'package:pentarun_flutter/models/station.dart';
