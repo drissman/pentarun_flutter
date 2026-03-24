@@ -4,7 +4,8 @@ import 'package:pentarun_flutter/services/auth_service.dart';
 import 'package:pentarun_flutter/theme/a2ui_colors.dart';
 
 class AuthScreen extends StatefulWidget {
-  const AuthScreen({super.key});
+  final VoidCallback? onJudgeModeSelected;
+  const AuthScreen({super.key, this.onJudgeModeSelected});
 
   @override
   State<AuthScreen> createState() => _AuthScreenState();
@@ -211,13 +212,13 @@ class _AuthScreenState extends State<AuthScreen> {
                 // Mode juge sans compte
                 const SizedBox(height: 24),
                 TextButton(
-                  onPressed: () {
-                    // Navigation gérée par app.dart via AuthState
-                  },
-                  child: const Text(
+                  onPressed: widget.onJudgeModeSelected,
+                  child: Text(
                     'CONTINUER SANS COMPTE (MODE JUGE)',
                     style: TextStyle(
-                      color: A2Colors.gris1,
+                      color: widget.onJudgeModeSelected != null
+                          ? A2Colors.gris1
+                          : A2Colors.border2,
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1.5,

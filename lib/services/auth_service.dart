@@ -30,13 +30,14 @@ class AuthService {
   }
 
   // ─── Google OAuth ─────────────────────────────────────────────────────────
-  // SPEC-KIT §3.1 — Connexion Google
-  // LaunchMode.externalApplication = redirect full-page (évite le popup blocker sur web)
+  // SPEC-KIT §3.1 — Connexion Google (Flutter web)
+  // url_launcher_web : seul LaunchMode.inAppBrowserView utilise window.open(url,'_self')
+  // = même onglet, jamais bloqué par le popup blocker (contrairement à _blank)
   static Future<bool> signInWithGoogle() async {
     return _client.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: 'https://pentarun.netlify.app',
-      authScreenLaunchMode: LaunchMode.externalApplication,
+      authScreenLaunchMode: LaunchMode.inAppBrowserView,
     );
   }
 

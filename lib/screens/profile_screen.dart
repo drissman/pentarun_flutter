@@ -11,7 +11,10 @@ import 'package:pentarun_flutter/theme/a2ui_colors.dart';
 
 class ProfileScreen extends StatefulWidget {
   final AthleteProfile? existing;
-  const ProfileScreen({super.key, this.existing});
+  /// Appelé après création du profil (première connexion).
+  /// Si null, utilise Navigator.pop() (mode édition depuis nav stack).
+  final VoidCallback? onSaved;
+  const ProfileScreen({super.key, this.existing, this.onSaved});
 
   @override
   State<ProfileScreen> createState() => _ProfileScreenState();
@@ -102,10 +105,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
       );
       if (widget.existing == null) {
         await ProfileService.createProfile(profile);
+        if (mounted) {
+          if (widget.onSaved != null) {
+            widget.onSaved!();
+          } else {
+            Navigator.of(context).pop(true);
+          }
+        }
       } else {
         await ProfileService.updateProfile(profile);
+        if (mounted) Navigator.of(context).pop(true);
       }
-      if (mounted) Navigator.of(context).pop(true);
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
     } finally {

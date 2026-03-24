@@ -65,6 +65,7 @@ class _AuthGate extends StatefulWidget {
 
 class _AuthGateState extends State<_AuthGate> {
   bool _loading = true;
+  bool _judgeMode = false;
   User? _user;
   AthleteProfile? _profile;
 
@@ -78,34 +79,63 @@ class _AuthGateState extends State<_AuthGate> {
       if (user == null) {
         if (mounted) setState(() { _user = null; _profile = null; _loading = false; });
       } else {
-        _user = user;
-        final p = await ProfileService.getCurrentProfile();
-        if (mounted) setState(() { _profile = p; _loading = false; });
+        try {
+          final p = await ProfileService.getCurrentProfile();
+          if (mounted) setState(() { _user = user; _profile = p; _loading = false; });
+        } catch (_) {
+          // Profil inaccessible (offline?) — on affiche quand même l'app
+          if (mounted) setState(() { _user = user; _profile = null; _loading = false; });
+        }
       }
     });
   }
 
   Future<void> _init() async {
-    final session = Supabase.instance.client.auth.currentSession;
-    if (session == null) {
+    try {
+      final session = Supabase.instance.client.auth.currentSession;
+      if (session == null) {
+        if (mounted) setState(() => _loading = false);
+        return;
+      }
+      _user = session.user;
+      final p = await ProfileService.getCurrentProfile();
+      if (mounted) setState(() { _profile = p; _loading = false; });
+    } catch (_) {
       if (mounted) setState(() => _loading = false);
-      return;
     }
-    _user = session.user;
-    final p = await ProfileService.getCurrentProfile();
-    if (mounted) setState(() { _profile = p; _loading = false; });
+  }
+
+  void _enterJudgeMode() {
+    setState(() => _judgeMode = true);
+  }
+
+  void _onProfileSaved() async {
+    try {
+      final p = await ProfileService.getCurrentProfile();
+      if (mounted) setState(() => _profile = p);
+    } catch (_) {
+      // Profile saved but query failed — go to app anyway
+      if (mounted) setState(() => _profile = AthleteProfile.empty());
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    // Mode juge — bypass auth
+    if (_judgeMode) return const Scaffold(body: PentarunApp());
+
     if (_loading) {
       return const Scaffold(
         backgroundColor: Color(0xFF0A0A0A),
-        body: Center(child: CircularProgressIndicator()),
+        body: Center(child: CircularProgressIndicator(color: Color(0xFF00E5FF))),
       );
     }
-    if (_user == null) return const AuthScreen();
-    if (_profile == null) return const ProfileScreen();
-    return Scaffold(body: PentarunApp());
+    if (_user == null) {
+      return AuthScreen(onJudgeModeSelected: _enterJudgeMode);
+    }
+    if (_profile == null) {
+      return ProfileScreen(onSaved: _onProfileSaved);
+    }
+    return const Scaffold(body: PentarunApp());
   }
 }

@@ -51,6 +51,17 @@ class AthleteProfile {
 
   String get displayName => '$prenom $nom'.toUpperCase();
 
+  /// Profil vide — utilisé comme sentinelle "profil créé mais non chargé"
+  factory AthleteProfile.empty() => AthleteProfile(
+    id: '', authId: '', nom: '', prenom: '',
+    sexe: Sex.homme,
+    dateNaissance: DateTime(1990),
+    poidsKg: 75, tailleCm: 175,
+    niveauHabituel: Level.challenger,
+    kbHabituelKg: 24,
+    createdAt: DateTime.now(),
+  );
+
   factory AthleteProfile.fromJson(Map<String, dynamic> json) {
     return AthleteProfile(
       id: json['id'] as String,
