@@ -320,22 +320,30 @@ class AthleteResultCard extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 3),
-        RichText(
-          text: TextSpan(
-            style: const TextStyle(
-              fontFamily: 'monospace',
-              color: A2Colors.blanc,
-              fontSize: 20,
-              fontWeight: FontWeight.w900,
-            ),
-            children: [
-              TextSpan(text: value.toString()),
-              const TextSpan(
-                text: ' KCAL',
-                style: TextStyle(fontSize: 10, color: A2Colors.gris1),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            Text(
+              value.toString(),
+              style: const TextStyle(
+                fontFamily: 'monospace',
+                color: A2Colors.blanc,
+                fontSize: 20,
+                fontWeight: FontWeight.w900,
               ),
-            ],
-          ),
+            ),
+            const Text(
+              ' KCAL',
+              style: TextStyle(
+                fontFamily: 'monospace',
+                color: A2Colors.gris1,
+                fontSize: 10,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
       ],
     );
@@ -361,22 +369,30 @@ class AthleteResultCard extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 3),
-          RichText(
-            text: TextSpan(
-              style: const TextStyle(
-                fontFamily: 'monospace',
-                color: A2Colors.ambre,
-                fontSize: 28,
-                fontWeight: FontWeight.w900,
-              ),
-              children: [
-                TextSpan(text: athlete.energy.total.round().toString()),
-                const TextSpan(
-                  text: ' KCAL',
-                  style: TextStyle(fontSize: 12, color: A2Colors.ambre),
+          Row(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                athlete.energy.total.round().toString(),
+                style: const TextStyle(
+                  fontFamily: 'monospace',
+                  color: A2Colors.ambre,
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
                 ),
-              ],
-            ),
+              ),
+              const Text(
+                ' KCAL',
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  color: A2Colors.ambre,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
           ),
         ],
       ),
