@@ -1,3 +1,4 @@
+// SPEC-KIT §3.1 — Phase router + auth gate
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/screens/racing_screen.dart';
 import 'package:pentarun_flutter/screens/setup_screen.dart';

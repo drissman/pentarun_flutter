@@ -22,6 +22,12 @@ class Athlete {
   final Uint8List? judgeSignature;
   final Uint8List? athleteSignature;
 
+  // SPEC-KIT §5.2 — Champs plateforme (optionnels : mode juge sans compte fonctionne sans)
+  final String? profileId;       // ID profil Supabase
+  final double? coeffAge;        // coeff VO2max (AgeCategory)
+  final double? coeffSexe;       // coeff sexe (Sex)
+  final double? platformScore;   // finalTimeMs × coeffKb × coeffAge × coeffSexe
+
   const Athlete({
     required this.id,
     required this.name,
@@ -39,6 +45,10 @@ class Athlete {
     this.noCountEvents = 0,
     this.judgeSignature,
     this.athleteSignature,
+    this.profileId,
+    this.coeffAge,
+    this.coeffSexe,
+    this.platformScore,
   });
 
   Athlete copyWith({
@@ -47,6 +57,7 @@ class Athlete {
     AthleteStatus? status,
     int? finalTimeMs,
     double? officialScore,
+    double? platformScore,
     int? noCountEvents,
     Uint8List? judgeSignature,
     Uint8List? athleteSignature,
@@ -68,9 +79,13 @@ class Athlete {
       finalTimeMs: clearFinalTime ? null : (finalTimeMs ?? this.finalTimeMs),
       officialScore:
           clearOfficialScore ? null : (officialScore ?? this.officialScore),
+      platformScore: clearFinalTime ? null : (platformScore ?? this.platformScore),
       noCountEvents: noCountEvents ?? this.noCountEvents,
       judgeSignature: judgeSignature ?? this.judgeSignature,
       athleteSignature: athleteSignature ?? this.athleteSignature,
+      profileId: profileId,
+      coeffAge: coeffAge,
+      coeffSexe: coeffSexe,
     );
   }
 }

@@ -1,11 +1,15 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/engine/energy_calculator.dart';
+import 'package:pentarun_flutter/models/age_category.dart';
 import 'package:pentarun_flutter/models/athlete.dart';
 import 'package:pentarun_flutter/models/energy_breakdown.dart';
 import 'package:pentarun_flutter/models/kettlebell.dart';
 import 'package:pentarun_flutter/models/level.dart';
+import 'package:pentarun_flutter/models/race_result.dart';
+import 'package:pentarun_flutter/models/sex.dart';
 import 'package:pentarun_flutter/models/station.dart';
+import 'package:pentarun_flutter/services/results_service.dart';
 
 // SPEC-KIT §4 — Machine à états : §4.1→setup | §4.2→racing | §4.3→summary
 enum AppPhase { setup, racing, summary }
@@ -36,6 +40,10 @@ class AppState extends ChangeNotifier {
   int formKb = 16;
   int formHeight = 175;
   int formWeight = 75;
+  // SPEC-KIT §5.2 — Champs plateforme (optionnels pour mode juge)
+  Sex formSexe = Sex.homme;
+  DateTime formDateNaissance = DateTime(1990, 1, 1);
+  String? formProfileId;
 
   // ─── CHRONO ─────────────────────────────────────────────────────────────────
   void updateElapsed() {
@@ -54,6 +62,8 @@ class AppState extends ChangeNotifier {
       weightKbKg: formKb,
       level: formLevel,
     );
+    final age = DateTime.now().year - formDateNaissance.year;
+    final cat = AgeCategory.fromAge(age);
     _athletes.add(Athlete(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       name: formName.toUpperCase(),
@@ -63,8 +73,12 @@ class AppState extends ChangeNotifier {
       weightAthlete: formWeight,
       coeff: Kettlebell.coeffFor(formKb),
       energy: energy,
+      profileId: formProfileId,
+      coeffAge: cat.coeff,
+      coeffSexe: formSexe.coeff,
     ));
     formName = '';
+    formProfileId = null;
     notifyListeners();
   }
 
@@ -99,6 +113,9 @@ class AppState extends ChangeNotifier {
     formKb = 16;
     formHeight = 175;
     formWeight = 75;
+    formSexe = Sex.homme;
+    formDateNaissance = DateTime(1990, 1, 1);
+    formProfileId = null;
     notifyListeners();
   }
 
@@ -110,13 +127,19 @@ class AppState extends ChangeNotifier {
       final next = a.currentStation + 1;
       if (next >= Station.count) {
         final rawMs = now.difference(_startTime!).inMilliseconds;
+        // SPEC-KIT §5.3 — Score officiel : T.brut(ms) × coefficient KB
+        final official = rawMs * a.coeff;
+        // SPEC-KIT §5.2 — scorePlateforme : officialScore × coeffAge × coeffSexe
+        final platform = (a.coeffAge != null && a.coeffSexe != null)
+            ? official * a.coeffAge! * a.coeffSexe!
+            : null;
         return a.copyWith(
           splits: [...a.splits, now],
           currentStation: Station.count,
           status: AthleteStatus.finished,
           finalTimeMs: rawMs,
-          // SPEC-KIT §5.3 — Score officiel : T.brut(ms) × coefficient KB
-          officialScore: rawMs * a.coeff,
+          officialScore: official,
+          platformScore: platform,
         );
       }
       return a.copyWith(
@@ -178,8 +201,38 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void sealAthlete(String athleteName) {
-    showToast('Fiche scellée et transmise — $athleteName.');
+  // SPEC-KIT §7.3 — Scellement + save Supabase fire-and-forget
+  void sealAthlete(Athlete athlete) {
+    showToast('Fiche scellée et transmise — ${athlete.name}.');
+    // Sauvegarde uniquement si profil lié et résultat complet
+    if (athlete.profileId != null &&
+        athlete.finalTimeMs != null &&
+        athlete.officialScore != null &&
+        athlete.platformScore != null &&
+        athlete.coeffAge != null &&
+        athlete.coeffSexe != null) {
+      final result = RaceResult(
+        profileId: athlete.profileId!,
+        waveDate: DateTime.now(),
+        level: athlete.level,
+        weightKbKg: athlete.weightKb,
+        coeffKb: athlete.coeff,
+        coeffAge: athlete.coeffAge!,
+        coeffSexe: athlete.coeffSexe!,
+        finalTimeMs: athlete.finalTimeMs!,
+        officialScore: athlete.officialScore!,
+        platformScore: athlete.platformScore!,
+        splitsMs: athlete.splits
+            .map((s) => s.difference(_startTime!).inMilliseconds)
+            .toList(),
+        noCountEvents: athlete.noCountEvents,
+        energyRunKcal: athlete.energy.run,
+        energySteelKcal: athlete.energy.steel,
+        energyTotalKcal: athlete.energy.total,
+      );
+      // Fire-and-forget — SPEC-KIT §7.3
+      ResultsService.saveResult(result);
+    }
   }
 
   // ─── TOAST ──────────────────────────────────────────────────────────────────
@@ -241,6 +294,21 @@ class AppState extends ChangeNotifier {
   void updateFormWeight(int v) {
     formWeight = v;
     notifyListeners();
+  }
+
+  void updateFormSexe(Sex v) {
+    formSexe = v;
+    notifyListeners();
+  }
+
+  void updateFormDateNaissance(DateTime v) {
+    formDateNaissance = v;
+    notifyListeners();
+  }
+
+  void updateFormProfileId(String? v) {
+    formProfileId = v;
+    // No notifyListeners needed — internal state only
   }
 }
 

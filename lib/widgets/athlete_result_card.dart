@@ -378,7 +378,7 @@ class AthleteResultCard extends StatelessWidget {
                         athlete: athlete,
                         onSealed: () {
                           Navigator.of(context).pop();
-                          state.sealAthlete(athlete.name);
+                          state.sealAthlete(athlete);
                         },
                       ),
                     )
