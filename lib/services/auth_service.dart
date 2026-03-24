@@ -1,5 +1,6 @@
 // SPEC-KIT §3.1 — Service authentification Supabase
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class AuthService {
   AuthService._();
@@ -30,10 +31,12 @@ class AuthService {
 
   // ─── Google OAuth ─────────────────────────────────────────────────────────
   // SPEC-KIT §3.1 — Connexion Google
+  // LaunchMode.externalApplication = redirect full-page (évite le popup blocker sur web)
   static Future<bool> signInWithGoogle() async {
     return _client.auth.signInWithOAuth(
       OAuthProvider.google,
       redirectTo: 'https://pentarun.netlify.app',
+      authScreenLaunchMode: LaunchMode.externalApplication,
     );
   }
 
