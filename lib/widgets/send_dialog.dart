@@ -177,7 +177,8 @@ class _SendDialogState extends State<SendDialog> {
               const Text(
                 'CHOISIR LE MODE D\'ENVOI',
                 style: TextStyle(
-                  color: A2Colors.gris2,
+                  // SPEC-KIT §6 A2UI ERRATA v1.4 — gris2 interdit pour texte (WCAG AA)
+                  color: A2Colors.gris1,
                   fontWeight: FontWeight.w900,
                   fontSize: 10,
                   letterSpacing: 2,
@@ -205,9 +206,10 @@ class _SendDialogState extends State<SendDialog> {
                       sublabel: EmailConfig.isEmailJsConfigured
                           ? 'Envoi automatique\nsans client email'
                           : 'Non configuré\n(voir email_config.dart)',
+                      // SPEC-KIT §6 A2UI ERRATA v1.4 — gris2 interdit pour texte
                       color: EmailConfig.isEmailJsConfigured
                           ? A2Colors.vert
-                          : A2Colors.gris2,
+                          : A2Colors.gris1,
                       onTap: EmailConfig.isEmailJsConfigured
                           ? _sendEmailJS
                           : _showEmailJSInfo,
@@ -222,7 +224,8 @@ class _SendDialogState extends State<SendDialog> {
                   child: const Text(
                     'ANNULER',
                     style: TextStyle(
-                      color: A2Colors.gris2,
+                      // SPEC-KIT §6 A2UI ERRATA v1.4 — gris2 interdit pour texte
+                      color: A2Colors.gris1,
                       fontWeight: FontWeight.w700,
                       fontSize: 12,
                       letterSpacing: 1.5,
@@ -326,7 +329,8 @@ class _OptionTile extends StatelessWidget {
               sublabel,
               textAlign: TextAlign.center,
               style: const TextStyle(
-                color: A2Colors.gris2,
+                // SPEC-KIT §6 A2UI ERRATA v1.4 — gris2 interdit pour texte
+                color: A2Colors.gris1,
                 fontSize: 10,
                 height: 1.5,
               ),

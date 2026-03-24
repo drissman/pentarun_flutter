@@ -30,7 +30,6 @@ ios/.generated/
 ios/Flutter/.last_build_id
 
 # Web
-lib/generated_plugin_registrant.dart
 
 # IDE
 .idea/
