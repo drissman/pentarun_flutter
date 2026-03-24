@@ -17,6 +17,7 @@ class _AuthScreenState extends State<AuthScreen> {
   bool _isLogin = true;
   bool _loading = false;
   String? _error;
+  String? _info;
 
   @override
   void dispose() {
@@ -26,18 +27,27 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _submit() async {
-    setState(() { _loading = true; _error = null; });
+    setState(() { _loading = true; _error = null; _info = null; });
     try {
       if (_isLogin) {
-        await AuthService.signInWithEmail(
+        final res = await AuthService.signInWithEmail(
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
+        if (res.session == null && mounted) {
+          setState(() => _error = 'Connexion échouée. Vérifiez vos identifiants.');
+        }
       } else {
-        await AuthService.signUpWithEmail(
+        final res = await AuthService.signUpWithEmail(
           email: _emailCtrl.text.trim(),
           password: _passwordCtrl.text,
         );
+        // Si pas de session → email de confirmation requis
+        if (res.session == null && mounted) {
+          setState(() => _info =
+              'Email envoyé ! Confirmez votre adresse mail puis reconnectez-vous.');
+        }
+        // Si session → onAuthStateChange gère la navigation automatiquement
       }
     } catch (e) {
       if (mounted) setState(() => _error = e.toString());
@@ -132,6 +142,18 @@ class _AuthScreenState extends State<AuthScreen> {
                       ),
                       const SizedBox(height: 8),
 
+                      // Info (ex: email de confirmation envoyé)
+                      if (_info != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          _info!,
+                          style: const TextStyle(
+                            color: Color(0xFF10B981),
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ],
                       // Erreur
                       if (_error != null) ...[
                         const SizedBox(height: 8),
