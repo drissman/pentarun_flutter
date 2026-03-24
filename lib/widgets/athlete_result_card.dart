@@ -134,6 +134,7 @@ class AthleteResultCard extends StatelessWidget {
             TimeFormatter.format(athlete.officialScore?.round()),
             style: const TextStyle(
               fontFamily: 'monospace',
+              color: A2Colors.blanc,
               fontSize: 40,
               fontWeight: FontWeight.w900,
               letterSpacing: -2,
@@ -323,6 +324,7 @@ class AthleteResultCard extends StatelessWidget {
           text: TextSpan(
             style: const TextStyle(
               fontFamily: 'monospace',
+              color: A2Colors.blanc,
               fontSize: 20,
               fontWeight: FontWeight.w900,
             ),
@@ -363,6 +365,7 @@ class AthleteResultCard extends StatelessWidget {
             text: TextSpan(
               style: const TextStyle(
                 fontFamily: 'monospace',
+                color: A2Colors.ambre,
                 fontSize: 28,
                 fontWeight: FontWeight.w900,
               ),
