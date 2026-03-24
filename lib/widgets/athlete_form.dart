@@ -197,7 +197,7 @@ class _AthleteFormState extends State<AthleteForm> {
           Text(
             label,
             style: const TextStyle(
-              color: A2Colors.gris2,
+              color: A2Colors.gris1,
               fontSize: 10,
               fontWeight: FontWeight.w900,
               letterSpacing: 1.5,

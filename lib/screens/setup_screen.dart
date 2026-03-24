@@ -56,7 +56,7 @@ class _EnergyPredictorCard extends StatelessWidget {
                     ),
                     const TextSpan(
                       text: ' KCAL',
-                      style: TextStyle(fontSize: 10, color: A2Colors.gris2),
+                      style: TextStyle(fontSize: 10, color: A2Colors.gris1),
                     ),
                   ],
                 ),
@@ -169,7 +169,7 @@ class SetupScreen extends StatelessWidget {
                   const Text(
                     "PHASE 1 — LA CHAMBRE D'APPEL",
                     style: TextStyle(
-                      color: A2Colors.gris2,
+                      color: A2Colors.gris1,
                       fontWeight: FontWeight.w700,
                       fontSize: 10,
                       letterSpacing: 2,
@@ -204,7 +204,7 @@ class SetupScreen extends StatelessWidget {
                             'AUCUN ATHLÈTE DANS LA VAGUE',
                             textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: A2Colors.gris2,
+                              color: A2Colors.gris1,
                               fontWeight: FontWeight.w900,
                               letterSpacing: 1.5,
                               fontSize: 12,
@@ -235,11 +235,11 @@ class SetupScreen extends StatelessWidget {
                       onPressed: hasAthletes ? () => state.startRacing() : null,
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
-                            hasAthletes ? A2Colors.vert : const Color(0xFF1A1A1A),
+                            hasAthletes ? A2Colors.vert : const Color(0xFF252525),
                         foregroundColor:
-                            hasAthletes ? Colors.black : A2Colors.gris2,
-                        disabledBackgroundColor: const Color(0xFF1A1A1A),
-                        disabledForegroundColor: A2Colors.gris2,
+                            hasAthletes ? Colors.black : A2Colors.gris1,
+                        disabledBackgroundColor: const Color(0xFF252525),
+                        disabledForegroundColor: A2Colors.gris1,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),

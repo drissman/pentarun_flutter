@@ -49,20 +49,20 @@ class AthleteSetupCard extends StatelessWidget {
           ),
           IconButton(
             onPressed: () => state.removeAthlete(athlete.id),
-            icon: const Icon(Icons.close, color: A2Colors.gris2, size: 20),
+            icon: const Icon(Icons.close, color: A2Colors.gris1, size: 20),
           ),
         ],
       ),
     );
   }
 
-  Widget _tag(String text, {Color color = const Color(0xFF555555)}) {
+  Widget _tag(String text, {Color color = A2Colors.gris1}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: const Color(0xFF222222),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.40)),
       ),
       child: Text(
         text,

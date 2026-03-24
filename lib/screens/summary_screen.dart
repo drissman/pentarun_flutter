@@ -44,7 +44,7 @@ class SummaryScreen extends StatelessWidget {
               const Text(
                 'PHASE 3 — LE BILAN MÉTABOLIQUE ET LÉGAL',
                 style: TextStyle(
-                  color: A2Colors.gris2,
+                  color: A2Colors.gris1,
                   fontWeight: FontWeight.w700,
                   fontSize: 10,
                   letterSpacing: 2,
@@ -230,7 +230,7 @@ class _QuickActionsPanel extends StatelessWidget {
             _ActionTile(
               icon: Icons.picture_as_pdf,
               label: 'EXPORT PDF',
-              color: A2Colors.gris2,
+              color: A2Colors.gris1,
               enabled: false,
             ),
             const SizedBox(width: 12),
@@ -304,7 +304,7 @@ class _ActionTile extends StatelessWidget {
                   const Text(
                     'BIENTÔT',
                     style: TextStyle(
-                      color: A2Colors.gris2,
+                      color: A2Colors.gris1,
                       fontSize: 9,
                       fontWeight: FontWeight.w700,
                       letterSpacing: 1,

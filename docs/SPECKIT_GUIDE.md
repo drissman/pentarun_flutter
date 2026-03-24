@@ -139,6 +139,7 @@ Avant tout merge / release, valider :
 |---|---|
 | Modifier une formule sans errata | Perd la traçabilité biomécanique |
 | Hard-coder une couleur hex | Contourne le design system A2UI |
+| Utiliser `gris2` comme couleur de texte | Ratio 3.2:1 — fail WCAG AA sur fond dark |
 | Ajouter une feature non spécifiée | Hors-scope = dette technique non contrôlée |
 | Supprimer silencieusement une feature | Doit figurer en §7.2 Élagage |
 | Commit sans référence OPENSPEC sur règle métier | Perd la traçabilité code ↔ spec |

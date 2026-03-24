@@ -113,12 +113,12 @@ class _SignaturePadState extends State<SignaturePad> {
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(Icons.refresh, color: A2Colors.gris2, size: 11),
+                Icon(Icons.refresh, color: A2Colors.gris1, size: 11),
                 SizedBox(width: 4),
                 Text(
                   'RÉINITIALISER',
                   style: TextStyle(
-                    color: A2Colors.gris2,
+                    color: A2Colors.gris1,
                     fontSize: 10,
                     fontWeight: FontWeight.w900,
                     letterSpacing: 1.5,

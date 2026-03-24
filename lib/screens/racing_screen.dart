@@ -67,7 +67,7 @@ class _RacingScreenState extends State<RacingScreen>
                           Text(
                             "PHASE 2 — L'ARÈNE A2UI",
                             style: TextStyle(
-                              color: A2Colors.gris2,
+                              color: A2Colors.gris1,
                               fontWeight: FontWeight.w700,
                               fontSize: 10,
                               letterSpacing: 2,

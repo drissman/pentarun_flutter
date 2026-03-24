@@ -181,6 +181,17 @@ Implémentation via `LayoutBuilder` + `Wrap` — jamais de `MediaQuery` en dur.
 4. **Jamais de police proportionnelle** pour les valeurs temporelles
 5. **Toujours `letterSpacing ≥ 1.5`** pour les labels uppercase
 6. **Jamais de fond blanc ou gris clair** sur un overlay
+7. **Jamais `gris2` comme couleur de texte lisible** — `gris2` est réservé aux bordures et séparateurs décoratifs. Tout texte secondaire utilise au minimum `gris1` (#9CA3AF, ratio ~5.8:1). `gris2` (#4B5563) ne passe pas le seuil WCAG AA sur fond `#111111`.
+
+## 8. Règle de Contraste Texte (v1.4)
+
+| Rôle du texte | Couleur minimale | Ratio | WCAG |
+|---|---|---|---|
+| Texte principal | `blanc` (#F0F0F0) | 14.5:1 | AAA ✅ |
+| Texte secondaire (labels) | `gris1` (#9CA3AF) | 5.8:1 | AA ✅ |
+| Texte désactivé | `gris1` (#9CA3AF) | 5.8:1 | AA ✅ |
+| Bordures / séparateurs | `gris2` (#4B5563) | décoratif | — |
+| **INTERDIT texte** | `gris2` (#4B5563) | 3.2:1 | ❌ fail |
 
 ---
 

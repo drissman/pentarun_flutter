@@ -112,7 +112,7 @@ class AthleteRaceCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(6),
                       ),
                     ),
-                    icon: const Icon(Icons.undo, color: A2Colors.gris2, size: 16),
+                    icon: const Icon(Icons.undo, color: A2Colors.gris1, size: 16),
                   ),
               ],
             ),
@@ -208,7 +208,7 @@ class AthleteRaceCard extends StatelessWidget {
                   const Text(
                     'ÉTAPE ACTUELLE',
                     style: TextStyle(
-                      color: A2Colors.gris2,
+                      color: A2Colors.gris1,
                       fontWeight: FontWeight.w900,
                       fontSize: 10,
                       letterSpacing: 1.5,

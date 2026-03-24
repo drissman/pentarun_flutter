@@ -19,7 +19,7 @@ class A2Theme {
         bodyLarge: TextStyle(color: A2Colors.blanc, fontWeight: FontWeight.w700),
         bodyMedium: TextStyle(color: A2Colors.blanc),
         labelSmall: TextStyle(
-          color: A2Colors.gris2,
+          color: A2Colors.gris1, // gris2 trop sombre sur fond dark — v1.4
           fontSize: 10,
           fontWeight: FontWeight.w900,
           letterSpacing: 1.5,
@@ -43,10 +43,14 @@ class A2Theme {
           borderSide: const BorderSide(color: A2Colors.cyan),
         ),
         labelStyle: const TextStyle(
-          color: A2Colors.gris2,
+          color: A2Colors.gris1,
           fontSize: 10,
           fontWeight: FontWeight.w900,
           letterSpacing: 1.5,
+        ),
+        hintStyle: const TextStyle(
+          color: A2Colors.gris1,
+          fontWeight: FontWeight.w500,
         ),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(

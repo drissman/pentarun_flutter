@@ -144,7 +144,7 @@ class AthleteResultCard extends StatelessWidget {
             'T.BRUT: ${TimeFormatter.format(athlete.finalTimeMs)} · C: ${athlete.coeff.toStringAsFixed(3)}',
             style: const TextStyle(
               fontFamily: 'monospace',
-              color: A2Colors.gris2,
+              color: A2Colors.gris1,
               fontSize: 10,
             ),
           ),
@@ -209,7 +209,7 @@ class AthleteResultCard extends StatelessWidget {
                     'H:${athlete.heightAthlete}cm / M:${athlete.weightAthlete}kg',
                     style: const TextStyle(
                       fontFamily: 'monospace',
-                      color: A2Colors.gris2,
+                      color: A2Colors.gris1,
                       fontSize: 10,
                     ),
                   ),
@@ -225,7 +225,7 @@ class AthleteResultCard extends StatelessWidget {
               const Padding(
                 padding: EdgeInsets.symmetric(horizontal: 12),
                 child: Text('+',
-                    style: TextStyle(color: A2Colors.gris2, fontSize: 22)),
+                    style: TextStyle(color: A2Colors.gris1, fontSize: 22)),
               ),
               _energyValue('Acier', athlete.energy.steel.round()),
               const Padding(
@@ -267,7 +267,7 @@ class AthleteResultCard extends StatelessWidget {
         Text(
           label.toUpperCase(),
           style: const TextStyle(
-            color: A2Colors.gris2,
+            color: A2Colors.gris1,
             fontWeight: FontWeight.w900,
             fontSize: 10,
           ),
@@ -284,7 +284,7 @@ class AthleteResultCard extends StatelessWidget {
               TextSpan(text: value.toString()),
               const TextSpan(
                 text: ' KCAL',
-                style: TextStyle(fontSize: 10, color: A2Colors.gris2),
+                style: TextStyle(fontSize: 10, color: A2Colors.gris1),
               ),
             ],
           ),
@@ -383,9 +383,9 @@ class AthleteResultCard extends StatelessWidget {
                 : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: hasBoth ? A2Colors.cyan : const Color(0xFF1A1A1A),
-              foregroundColor: hasBoth ? Colors.black : A2Colors.gris2,
-              disabledBackgroundColor: const Color(0xFF1A1A1A),
-              disabledForegroundColor: A2Colors.gris2,
+              foregroundColor: hasBoth ? Colors.black : A2Colors.gris1,
+              disabledBackgroundColor: const Color(0xFF252525),
+              disabledForegroundColor: A2Colors.gris1,
               padding:
                   const EdgeInsets.symmetric(horizontal: 40, vertical: 14),
               shape: RoundedRectangleBorder(
@@ -448,13 +448,13 @@ class AthleteResultCard extends StatelessWidget {
     );
   }
 
-  Widget _tag(String text, {Color color = const Color(0xFF555555), bool mono = false}) {
+  Widget _tag(String text, {Color color = A2Colors.gris1, bool mono = false}) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
       decoration: BoxDecoration(
-        color: const Color(0xFF1A1A1A),
+        color: const Color(0xFF222222),
         borderRadius: BorderRadius.circular(4),
-        border: Border.all(color: color.withValues(alpha: 0.2)),
+        border: Border.all(color: color.withValues(alpha: 0.40)),
       ),
       child: Text(
         text,
