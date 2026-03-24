@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/models/athlete.dart';
+import 'package:pentarun_flutter/screens/ranking_screen.dart';
 import 'package:pentarun_flutter/state/app_state.dart';
 import 'package:pentarun_flutter/theme/a2ui_colors.dart';
 import 'package:pentarun_flutter/utils/time_formatter.dart';
@@ -244,10 +245,13 @@ class _QuickActionsPanel extends StatelessWidget {
             ),
             const SizedBox(width: 12),
             _ActionTile(
-              icon: Icons.share,
-              label: 'PARTAGER',
+              icon: Icons.leaderboard,
+              label: 'CLASSEMENT\nEN LIGNE',
               color: A2Colors.cyan,
-              enabled: false,
+              enabled: true,
+              onTap: () => Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => const RankingScreen()),
+              ),
             ),
           ],
         ),

@@ -148,6 +148,51 @@ class AthleteResultCard extends StatelessWidget {
               fontSize: 10,
             ),
           ),
+          // SPEC-KIT §5.2 — scorePlateforme (affiché si profil lié)
+          if (athlete.platformScore != null) ...[
+            const SizedBox(height: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: A2Colors.cyan.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(color: A2Colors.cyan.withValues(alpha: 0.3)),
+              ),
+              child: Column(
+                children: [
+                  const Text(
+                    'SCORE PLATEFORME',
+                    style: TextStyle(
+                      color: A2Colors.cyan,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 9,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    TimeFormatter.format(athlete.platformScore!.round()),
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      color: A2Colors.cyan,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 18,
+                    ),
+                  ),
+                  Text(
+                    'Cage×${athlete.coeff.toStringAsFixed(3)}'
+                    ' · Age×${athlete.coeffAge?.toStringAsFixed(3) ?? '—'}'
+                    ' · Sexe×${athlete.coeffSexe?.toStringAsFixed(3) ?? '—'}',
+                    style: const TextStyle(
+                      fontFamily: 'monospace',
+                      color: A2Colors.gris1,
+                      fontSize: 9,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ],
       ),
     );
