@@ -441,6 +441,14 @@ Tous les errata des versions précédentes restent en vigueur :
 
 **Règle** : Tout bouton avec spinner de chargement doit maintenir une couleur de fond explicite et utiliser `color: A2Colors.blanc` pour le `CircularProgressIndicator`.
 
+### §11.3 — ERRATA v2.1 — Google OAuth spinner infini (window.open bloqué)
+
+**Problème** : `supabase_flutter.signInWithOAuth()` appelle en interne `url_launcher` → `window.open(url, '_self', 'noopener,noreferrer')`. Après les `await` du flow PKCE (écriture du code verifier dans SharedPreferences), le navigateur considère que le contexte "user activation" est expiré. `window.open` est alors bloqué **silencieusement** par le popup blocker — sans exception, sans valeur de retour `false`. La `Future` ne se complète jamais, le spinner tourne indéfiniment.
+
+**Correction** : Remplacer `signInWithOAuth()` par `getOAuthSignInUrl()` (construction locale de l'URL PKCE, pas d'appel réseau) puis naviguer via `window.location.href = url` (implémenté dans `lib/utils/web_redirect_web.dart` via import conditionnel `dart.library.html`). Cette navigation directe ne nécessite pas de user-activation et ne peut pas être bloquée par le popup blocker.
+
+**Règle** : Sur Flutter Web, tout OAuth redirect doit utiliser `window.location.href` et non `window.open`. Ne jamais déléguer la navigation OAuth à `url_launcher` sur web.
+
 ---
 
 *OPENSPEC PENTARUN v2.0 · KAFORGE · Kinetic Axiom*

@@ -107,6 +107,7 @@ Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a u
 | Fix getRanking() join profiles sans age_category | §5.6 | ✅ Corrigé v2.0 |
 | Fix thème texte noir sur fond noir (§11.1 ERRATA) | §6 A2UI | ✅ Corrigé v2.0 |
 | Fix spinner visible état loading (§11.2 ERRATA) | §3.1 §3.3 | ✅ Corrigé v2.0 |
+| Fix Google OAuth spinner infini (§11.3 ERRATA) | §3.1 | ✅ Corrigé v2.1 |
 
 #### Phase 2.2 — Compétition Connectée 📋
 
@@ -215,6 +216,7 @@ Avant tout merge / release, valider :
 | `ThemeData(textTheme: TextTheme(...))` partiel | Variants non couverts héritent de Colors.black → §11.1 ERRATA |
 | `CircularProgressIndicator(color: Colors.black)` dans bouton | Invisible sur fond sombre en état désactivé → §11.2 ERRATA |
 | Appel DB Supabase synchrone dans `onAuthStateChange` | Deadlock client interne supabase_flutter → utiliser Future.delayed(Duration.zero) |
+| `url_launcher` pour OAuth redirect sur Flutter Web | window.open bloqué silencieusement après await PKCE → utiliser window.location.href → §11.3 ERRATA |
 
 ---
 

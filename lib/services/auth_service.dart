@@ -1,6 +1,6 @@
 // SPEC-KIT §3.1 — Service authentification Supabase
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:pentarun_flutter/utils/web_redirect.dart';
 
 class AuthService {
   AuthService._();
@@ -30,15 +30,17 @@ class AuthService {
   }
 
   // ─── Google OAuth ─────────────────────────────────────────────────────────
-  // SPEC-KIT §3.1 — Connexion Google (Flutter web)
-  // url_launcher_web : seul LaunchMode.inAppBrowserView utilise window.open(url,'_self')
-  // = même onglet, jamais bloqué par le popup blocker (contrairement à _blank)
-  static Future<bool> signInWithGoogle() async {
-    return _client.auth.signInWithOAuth(
-      OAuthProvider.google,
+  // SPEC-KIT §3.1 ERRATA v2.1 — window.location.href bypass popup blocker
+  // url_launcher → window.open('noopener,noreferrer') est bloqué silencieusement
+  // après les await PKCE (contexte user-activation expiré dans le browser).
+  // Fix : getOAuthSignInUrl() construit l'URL localement (PKCE, pas de réseau),
+  // puis webRedirect() navigue via window.location.href (non bloquable).
+  static Future<void> signInWithGoogle() async {
+    final res = await _client.auth.getOAuthSignInUrl(
+      provider: OAuthProvider.google,
       redirectTo: 'https://pentarun.netlify.app',
-      authScreenLaunchMode: LaunchMode.inAppBrowserView,
     );
+    webRedirect(res.url);
   }
 
   // ─── Déconnexion ──────────────────────────────────────────────────────────

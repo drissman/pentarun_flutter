@@ -81,11 +81,12 @@ class _AuthScreenState extends State<AuthScreen> {
   Future<void> _googleSignIn() async {
     setState(() { _loading = true; _error = null; });
     try {
+      // SPEC-KIT §3.1 ERRATA v2.1 — signInWithGoogle navigue via window.location.href
+      // La page entière se redirige vers Google → cette Future ne se complète jamais.
+      // Le finally ne s'exécute donc pas après une navigation réussie.
       await AuthService.signInWithGoogle();
     } catch (e) {
-      if (mounted) setState(() => _error = e.toString());
-    } finally {
-      if (mounted) setState(() => _loading = false);
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
   }
 
