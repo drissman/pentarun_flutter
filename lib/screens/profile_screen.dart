@@ -6,6 +6,7 @@ import 'package:pentarun_flutter/models/kettlebell.dart';
 import 'package:pentarun_flutter/models/level.dart';
 import 'package:pentarun_flutter/models/sex.dart';
 import 'package:pentarun_flutter/services/auth_service.dart';
+import 'package:pentarun_flutter/services/delete_account_service.dart';
 import 'package:pentarun_flutter/services/profile_service.dart';
 import 'package:pentarun_flutter/theme/a2ui_colors.dart';
 
@@ -120,6 +121,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
       if (mounted) setState(() => _error = e.toString());
     } finally {
       if (mounted) setState(() => _loading = false);
+    }
+  }
+
+  Future<void> _confirmDeleteAccount(BuildContext context) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: const Color(0xFF1A0000),
+        title: const Text('SUPPRIMER MON COMPTE',
+            style: TextStyle(color: A2Colors.blanc, fontWeight: FontWeight.w900, fontSize: 14, letterSpacing: 1)),
+        content: const Text(
+          'Cette action est irréversible.\nTon profil et tous tes résultats seront définitivement supprimés.',
+          style: TextStyle(color: A2Colors.gris1, fontSize: 12),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('ANNULER', style: TextStyle(color: A2Colors.gris1)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text('SUPPRIMER', style: TextStyle(color: A2Colors.rouge, fontWeight: FontWeight.w900)),
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() { _loading = true; _error = null; });
+    try {
+      await DeleteAccountService.deleteAccount();
+      // La suppression déconnecte automatiquement — _AuthGate détecte user == null
+    } catch (e) {
+      if (mounted) setState(() { _error = e.toString(); _loading = false; });
     }
   }
 
@@ -307,6 +341,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   },
                   child: const Text('SE DÉCONNECTER',
                     style: TextStyle(color: A2Colors.rouge, fontSize: 11,
+                        fontWeight: FontWeight.w700, letterSpacing: 1.5)),
+                ),
+                const SizedBox(height: 4),
+                TextButton(
+                  onPressed: () => _confirmDeleteAccount(context),
+                  child: const Text('SUPPRIMER MON COMPTE',
+                    style: TextStyle(color: Color(0xFF661111), fontSize: 10,
                         fontWeight: FontWeight.w700, letterSpacing: 1.5)),
                 ),
               ],
