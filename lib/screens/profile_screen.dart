@@ -284,9 +284,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 height: 56,
                 child: ElevatedButton(
                   onPressed: _loading ? null : _save,
+                  style: _loading
+                      ? ElevatedButton.styleFrom(
+                          backgroundColor: A2Colors.cyanDark,
+                          foregroundColor: A2Colors.blanc,
+                        )
+                      : null,
                   child: _loading
                       ? const SizedBox(width: 20, height: 20,
-                          child: CircularProgressIndicator(color: Colors.black, strokeWidth: 2))
+                          child: CircularProgressIndicator(color: A2Colors.blanc, strokeWidth: 2))
                       : const Text('SAUVEGARDER MON PROFIL',
                           style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1.5)),
                 ),

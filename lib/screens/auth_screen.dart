@@ -195,11 +195,17 @@ class _AuthScreenState extends State<AuthScreen> {
                         height: 56,
                         child: ElevatedButton(
                           onPressed: _loading ? null : _submit,
+                          style: _loading
+                              ? ElevatedButton.styleFrom(
+                                  backgroundColor: A2Colors.cyanDark,
+                                  foregroundColor: A2Colors.blanc,
+                                )
+                              : null,
                           child: _loading
                               ? const SizedBox(
                                   width: 20, height: 20,
                                   child: CircularProgressIndicator(
-                                    color: Colors.black, strokeWidth: 2))
+                                    color: A2Colors.blanc, strokeWidth: 2))
                               : Text(
                                   _isLogin ? 'SE CONNECTER' : 'CRÉER MON COMPTE',
                                   style: const TextStyle(
