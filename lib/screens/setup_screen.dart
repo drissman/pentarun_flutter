@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/models/energy_breakdown.dart';
 import 'package:pentarun_flutter/screens/competition_list_screen.dart';
 import 'package:pentarun_flutter/screens/profile_screen.dart';
+import 'package:pentarun_flutter/screens/wave_join_screen.dart';
 import 'package:pentarun_flutter/services/profile_service.dart';
 import 'package:pentarun_flutter/state/app_state.dart';
 import 'package:pentarun_flutter/theme/a2ui_colors.dart';
@@ -147,6 +148,12 @@ class SetupScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _joinWave(BuildContext context) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const WaveJoinScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = AppStateProvider.of(context);
@@ -254,6 +261,32 @@ class SetupScreen extends StatelessWidget {
                     },
                   ),
                   const SizedBox(height: 24),
+
+                  // Rejoindre vague connectée
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _joinWave(context),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: A2Colors.cyan,
+                        side: const BorderSide(color: A2Colors.cyanDark),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                      ),
+                      icon: const Icon(Icons.link, size: 18),
+                      label: const Text(
+                        'REJOINDRE UNE VAGUE CONNECTÉE',
+                        style: TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 12,
+                          letterSpacing: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
 
                   // Start button
                   SizedBox(

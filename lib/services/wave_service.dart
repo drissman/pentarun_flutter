@@ -30,11 +30,11 @@ class WaveService {
     return WaveAthlete.fromJson(data);
   }
 
-  /// Récupère tous les athlètes d'une vague avec les infos profil
+  /// Récupère tous les athlètes d'une vague avec les infos profil complètes
   static Future<List<WaveAthlete>> getWaveAthletes(String waveId) async {
     final data = await _client
         .from('wave_athletes')
-        .select('*, profiles!inner(nom, prenom)')
+        .select('*, profiles!inner(nom, prenom, poids_kg, taille_cm, sexe, date_naissance)')
         .eq('wave_id', waveId)
         .order('dossard', nullsFirst: false)
         .order('created_at');

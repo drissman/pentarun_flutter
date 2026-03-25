@@ -378,6 +378,94 @@ Gymnases = wifi instable. Règle critique :
 - `coeff_physio` dynamique
 - `scorePlateforme_HR` en complément du score statique
 
+### Phase 3.5 — CV Assist : Comptage Automatique des Répétitions
+
+> **Jalon stratégique — Feature Gold (compte root/premium)**
+
+#### Objectif
+Assister le juge en comptant automatiquement les répétitions KB via computer vision on-device. Le juge conserve la **décision finale** (validation / no-count). La CV est une assistance, jamais un remplacement.
+
+#### Architecture retenue : On-Device (MediaPipe Pose Landmarker)
+
+**Technologie :** Google MediaPipe Pose Landmarker
+- Détection de 33 points de pose corporels (landmarks)
+- Traitement local sur le device (CPU/GPU du téléphone/tablette)
+- Framework : `google_mlkit_pose_detection` (Flutter, Android + iOS)
+- Latence : < 20ms — compatible avec 30fps en temps réel
+
+**Pourquoi on-device et pas cloud API :**
+- Wifi gymnase instable → cloud API = blackout total. On-device = 0 dépendance réseau
+- Latence cloud (200-500ms) incompatible avec comptage temps réel (besoin 30fps)
+- Coût cloud : facturation par frame → prohibitif à l'usage
+- Vie privée : la vidéo ne quitte jamais le device
+- APIs cloud génériques (Google Cloud Vision, OpenAI Vision) ne font pas de pose estimation temporelle
+
+**Contrainte plateforme :**
+`google_mlkit_pose_detection` fonctionne sur Android et iOS uniquement.
+Flutter Web = non supporté pour le ML temps réel.
+→ Cette feature nécessite la compilation de l'app en natif (APK Android / IPA iOS).
+
+#### Algorithme de détection de répétition
+
+```
+Caméra (30fps) → MediaPipe Pose → Landmarks articulaires
+→ Angle épaule-coude-poignet (bras droit + gauche)
+→ Machine à états angulaire :
+    BASSE  : angle < seuil_bas  (ex: 60°)
+    HAUTE  : angle > seuil_haut (ex: 150°)
+    Transition BASSE→HAUTE→BASSE = +1 répétition
+→ Score de confiance par rep (qualité du mouvement)
+→ Affichage compteur live + indication au juge
+```
+
+Calibration par type de mouvement KB biathlon :
+- Snatch / Jerk / Long Cycle → profils angulaires distincts
+- Seuils configurables par niveau (amplitude différente DÉCOUVERTE vs TITAN)
+
+#### Feature Flag par compte
+
+```sql
+ALTER TABLE profiles ADD COLUMN features TEXT[] DEFAULT '{}';
+-- Ex : features = ARRAY['cv_rep_counting', 'hr_advanced']
+```
+
+```dart
+bool get hasCVFeature => profile.features.contains('cv_rep_counting');
+```
+
+Activation par l'admin via le dashboard Supabase (UPDATE profiles SET features = ...).
+
+#### Intégration dans RacingScreen
+
+- Overlay caméra semi-transparent sur `AthleteRaceCard`
+- Compteur CV affiché à côté du compteur manuel juge
+- Si écart CV vs juge > 2 reps → alerte visuelle (orange) → juge arbitre
+- Bouton "CV OFF" pour désactiver à tout moment
+- Le bouton NO COUNT reste le seul mécanisme officiel d'invalidation
+
+#### Ce que la CV ne fait PAS
+- Ne valide pas automatiquement les stations (le juge appuie toujours sur VALIDER)
+- Ne remplace pas le bouton NO COUNT (le juge juge)
+- Ne transmet pas de vidéo à un serveur externe
+- Ne fonctionne pas si le device n'a pas de caméra frontale/arrière accessible
+
+#### Packages Flutter nécessaires (Phase 3.5)
+```yaml
+google_mlkit_pose_detection: ^0.12.0   # Android + iOS
+camera: ^0.11.0                         # Accès caméra Flutter
+```
+
+#### Roadmap Phase 3.5
+
+| Étape | Description |
+|---|---|
+| 3.5.1 | Intégration `google_mlkit_pose_detection` + accès caméra |
+| 3.5.2 | Extraction landmarks + calcul angles articulaires |
+| 3.5.3 | Algorithme machine à états angulaire (calibration snatch/jerk) |
+| 3.5.4 | UI overlay RacingScreen + compteur CV |
+| 3.5.5 | Feature flag `cv_rep_counting` + activation par compte |
+| 3.5.6 | Tests terrain (gymnase) + calibration seuils par niveau |
+
 ### Phase 4 — Infrastructure Souveraine
 - Migration Supabase Cloud → VPS auto-hébergé
 - Infrastructure KAFORGE propriétaire

@@ -131,6 +131,18 @@ Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a u
 | Progression individuelle | §5.6 | 📋 Phase 2.3 |
 | Export PDF fiche résultat | §9.4 Élagage | 📋 Phase 2.3 |
 
+#### Phase 3.5 — CV Assist : Comptage Automatique des Répétitions 📋
+
+| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+|---|---|---|
+| Intégration google_mlkit_pose_detection | §3.5 | 📋 Phase 3.5 |
+| Accès caméra Flutter (camera package) | §3.5 | 📋 Phase 3.5 |
+| Extraction landmarks + angles articulaires | §3.5.2 | 📋 Phase 3.5 |
+| Machine à états angulaire (snatch/jerk/long cycle) | §3.5.3 | 📋 Phase 3.5 |
+| Overlay UI RacingScreen + compteur CV | §3.5.4 | 📋 Phase 3.5 |
+| Feature flag cv_rep_counting (profiles.features[]) | §3.5.5 | 📋 Phase 3.5 |
+| Calibration terrain (seuils par niveau) | §3.5.6 | 📋 Phase 3.5 |
+
 #### Phase 3 — HR & Coefficients Dynamiques 📋
 
 | Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
