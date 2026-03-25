@@ -7,6 +7,7 @@ import 'package:pentarun_flutter/config/supabase_config.dart';
 import 'package:pentarun_flutter/models/athlete_profile.dart';
 import 'package:pentarun_flutter/screens/auth_screen.dart';
 import 'package:pentarun_flutter/screens/profile_screen.dart';
+import 'package:pentarun_flutter/screens/spectator_screen.dart';
 import 'package:pentarun_flutter/services/profile_service.dart';
 import 'package:pentarun_flutter/state/app_state.dart';
 import 'package:pentarun_flutter/theme/a2ui_theme.dart';
@@ -42,11 +43,24 @@ Future<void> main() async {
       }
     }
   }
-  runApp(const PentarunRoot());
+
+  // SPEC-KIT §7.2 Sprint 5 — Route spectateur : /#/live/{competitionId}
+  // Détecté avant runApp → bypass complet de l'AuthGate
+  String? spectatorCompetitionId;
+  if (kIsWeb) {
+    final fragment = Uri.base.fragment; // ex: '/live/abc-123-def'
+    if (fragment.startsWith('/live/')) {
+      final id = fragment.substring('/live/'.length).trim();
+      if (id.isNotEmpty) spectatorCompetitionId = id;
+    }
+  }
+
+  runApp(PentarunRoot(spectatorCompetitionId: spectatorCompetitionId));
 }
 
 class PentarunRoot extends StatefulWidget {
-  const PentarunRoot({super.key});
+  final String? spectatorCompetitionId;
+  const PentarunRoot({super.key, this.spectatorCompetitionId});
 
   @override
   State<PentarunRoot> createState() => _PentarunRootState();
@@ -69,9 +83,12 @@ class _PentarunRootState extends State<PentarunRoot> {
         title: 'PENTARUN v2.0',
         debugShowCheckedModeBanner: false,
         theme: A2Theme.dark,
-        home: SupabaseConfig.isConfigured
-            ? const _AuthGate()
-            : const Scaffold(body: PentarunApp()),
+        // SPEC-KIT §7.2 Sprint 5 — Route spectateur bypass AuthGate
+        home: widget.spectatorCompetitionId != null
+            ? SpectatorScreen(competitionId: widget.spectatorCompetitionId!)
+            : SupabaseConfig.isConfigured
+                ? const _AuthGate()
+                : const Scaffold(body: PentarunApp()),
       ),
     );
   }

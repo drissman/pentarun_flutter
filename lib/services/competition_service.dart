@@ -46,6 +46,18 @@ class CompetitionService {
     return (data as List).map((e) => Competition.fromJson(e)).toList();
   }
 
+  /// Récupère une compétition par son ID (accessible anonymement si en_cours)
+  /// SPEC-KIT §7.2 Sprint 5 — utilisé par SpectatorScreen
+  static Future<Competition?> getCompetitionById(String id) async {
+    final data = await _client
+        .from('competitions')
+        .select()
+        .eq('id', id)
+        .maybeSingle();
+    if (data == null) return null;
+    return Competition.fromJson(data);
+  }
+
   /// Compétitions actives (pour les spectateurs et les juges)
   static Future<List<Competition>> getActiveCompetitions() async {
     final data = await _client

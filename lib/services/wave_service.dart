@@ -24,6 +24,8 @@ class WaveService {
           'profile_id': profile.id,
           'kb_kg': kbKg,
           if (dossard != null) 'dossard': dossard,
+          // SPEC-KIT §7.2 Sprint 5 — display_name dénormalisé pour accès spectateur anonyme
+          'display_name': profile.displayName,
         })
         .select('*, profiles!inner(nom, prenom)')
         .single();
@@ -35,6 +37,18 @@ class WaveService {
     final data = await _client
         .from('wave_athletes')
         .select('*, profiles!inner(nom, prenom, poids_kg, taille_cm, sexe, date_naissance)')
+        .eq('wave_id', waveId)
+        .order('dossard', nullsFirst: false)
+        .order('created_at');
+    return (data as List).map((e) => WaveAthlete.fromJson(e)).toList();
+  }
+
+  /// Récupère les athlètes sans jointure profil (spectateur anonyme)
+  /// SPEC-KIT §7.2 Sprint 5 — utilise display_name dénormalisé
+  static Future<List<WaveAthlete>> getWaveAthletesPublic(String waveId) async {
+    final data = await _client
+        .from('wave_athletes')
+        .select()
         .eq('wave_id', waveId)
         .order('dossard', nullsFirst: false)
         .order('created_at');

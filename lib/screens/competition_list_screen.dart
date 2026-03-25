@@ -1,5 +1,6 @@
 // SPEC-KIT §7.1 — Phase 2.2 — Liste compétitions + gestion vagues (organisateur)
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:pentarun_flutter/models/competition.dart';
 import 'package:pentarun_flutter/models/level.dart';
 import 'package:pentarun_flutter/models/wave.dart';
@@ -261,7 +262,7 @@ class _CompetitionDetailScreenState extends State<_CompetitionDetailScreen> {
           ),
         ),
         actions: [
-          if (_competition.isActive)
+          if (_competition.isActive) ...[
             IconButton(
               icon: const Icon(Icons.monitor, color: A2Colors.cyan),
               tooltip: 'Vue directeur',
@@ -269,6 +270,27 @@ class _CompetitionDetailScreenState extends State<_CompetitionDetailScreen> {
                 builder: (_) => DirectorScreen(competition: _competition),
               )),
             ),
+            // SPEC-KIT §7.2 Sprint 5 — lien spectateur public
+            IconButton(
+              icon: const Icon(Icons.link, color: A2Colors.gris1),
+              tooltip: 'Copier le lien spectateurs',
+              onPressed: () async {
+                const base = 'https://pentarun.netlify.app';
+                final url = '$base/#/live/${_competition.id}';
+                await Clipboard.setData(ClipboardData(text: url));
+                if (context.mounted) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Lien spectateurs copié !',
+                          style: TextStyle(fontWeight: FontWeight.w700)),
+                      backgroundColor: A2Colors.vert,
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                }
+              },
+            ),
+          ],
           if (!_competition.isFinished)
             TextButton(
               onPressed: _toggleStatut,

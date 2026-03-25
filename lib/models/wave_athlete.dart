@@ -71,6 +71,9 @@ class WaveAthlete {
       // Calcul coeffSexe depuis sexe
       final sexe = profileData['sexe'] as String?;
       coeffSexe = (sexe == 'FEMME') ? 0.870 : 1.000;
+    } else if (json['display_name'] != null) {
+      // SPEC-KIT §7.2 Sprint 5 — colonne dénormalisée (spectateur anonyme, pas de jointure profil)
+      name = (json['display_name'] as String).toUpperCase();
     }
 
     return WaveAthlete(

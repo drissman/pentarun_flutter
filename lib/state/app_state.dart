@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/engine/energy_calculator.dart';
+import 'package:pentarun_flutter/services/offline_queue.dart';
 import 'package:pentarun_flutter/models/age_category.dart';
 import 'package:pentarun_flutter/models/athlete.dart';
 import 'package:pentarun_flutter/models/energy_breakdown.dart';
@@ -203,9 +204,11 @@ class AppState extends ChangeNotifier {
     _checkAutoSummary();
 
     // SPEC-KIT §7.1 — Phase 2.2 : push Realtime intermédiaire (fire-and-forget)
+    // SPEC-KIT §7.2 Sprint 5 — offline queue : enqueue si réseau absent, flush si succès
     if (_currentWaveId != null) {
       final updated = _athletes.firstWhere((a) => a.id == id, orElse: () => _athletes.first);
       if (updated.waveAthleteId != null) {
+        final payload = _buildPayload(updated);
         WaveService.pushProgress(
           waveAthleteId: updated.waveAthleteId!,
           stationActuelle: updated.currentStation,
@@ -217,7 +220,11 @@ class AppState extends ChangeNotifier {
           finalTimeMs: updated.finalTimeMs,
           officialScore: updated.officialScore,
           platformScore: updated.platformScore,
-        ).catchError((_) {}); // offline : ignore silencieusement
+        ).then((_) {
+          offlineFlush(_replayItem).catchError((_) {});
+        }).catchError((_) {
+          offlineEnqueue(payload).catchError((_) {});
+        });
       }
     }
   }
@@ -306,21 +313,66 @@ class AppState extends ChangeNotifier {
     }
 
     // SPEC-KIT §7.1 — Phase 2.2 : marque l'athlète "termine" dans wave_athletes
+    // SPEC-KIT §7.2 Sprint 5 — offline queue
     if (_currentWaveId != null && athlete.waveAthleteId != null) {
+      final splitsMs = athlete.splits
+          .map((s) => s.difference(_startTime!).inMilliseconds)
+          .toList();
+      final payload = {
+        'waveAthleteId': athlete.waveAthleteId!,
+        'stationActuelle': Station.count,
+        'splitsMs': splitsMs,
+        'statutAthlete': 'termine',
+        'noCountEvents': athlete.noCountEvents,
+        if (athlete.finalTimeMs != null) 'finalTimeMs': athlete.finalTimeMs,
+        if (athlete.officialScore != null) 'officialScore': athlete.officialScore,
+        if (athlete.platformScore != null) 'platformScore': athlete.platformScore,
+      };
       WaveService.pushProgress(
         waveAthleteId: athlete.waveAthleteId!,
         stationActuelle: Station.count,
-        splitsMs: athlete.splits
-            .map((s) => s.difference(_startTime!).inMilliseconds)
-            .toList(),
+        splitsMs: splitsMs,
         statutAthlete: 'termine',
         noCountEvents: athlete.noCountEvents,
         finalTimeMs: athlete.finalTimeMs,
         officialScore: athlete.officialScore,
         platformScore: athlete.platformScore,
-      ).catchError((_) {}); // offline : ignore silencieusement
+      ).then((_) {
+        offlineFlush(_replayItem).catchError((_) {});
+      }).catchError((_) {
+        offlineEnqueue(payload).catchError((_) {});
+      });
     }
   }
+
+  // ─── OFFLINE QUEUE HELPERS ──────────────────────────────────────────────────
+
+  Map<String, dynamic> _buildPayload(Athlete a) => {
+    'waveAthleteId': a.waveAthleteId!,
+    'stationActuelle': a.currentStation,
+    'splitsMs': a.splits
+        .map((s) => s.difference(_startTime!).inMilliseconds)
+        .toList(),
+    'statutAthlete': a.status == AthleteStatus.finished ? 'termine' : 'en_course',
+    'noCountEvents': a.noCountEvents,
+    if (a.finalTimeMs != null) 'finalTimeMs': a.finalTimeMs,
+    if (a.officialScore != null) 'officialScore': a.officialScore,
+    if (a.platformScore != null) 'platformScore': a.platformScore,
+  };
+
+  static Future<void> _replayItem(Map<String, dynamic> item) =>
+      WaveService.pushProgress(
+        waveAthleteId: item['waveAthleteId'] as String,
+        stationActuelle: item['stationActuelle'] as int,
+        splitsMs: (item['splitsMs'] as List)
+            .map((e) => (e as num).toInt())
+            .toList(),
+        statutAthlete: item['statutAthlete'] as String,
+        noCountEvents: (item['noCountEvents'] as num?)?.toInt() ?? 0,
+        finalTimeMs: (item['finalTimeMs'] as num?)?.toInt(),
+        officialScore: (item['officialScore'] as num?)?.toDouble(),
+        platformScore: (item['platformScore'] as num?)?.toDouble(),
+      );
 
   // ─── TOAST ──────────────────────────────────────────────────────────────────
   void showToast(String message) {
