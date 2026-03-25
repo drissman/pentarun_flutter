@@ -5,6 +5,10 @@ class A2Theme {
   A2Theme._();
 
   static ThemeData get dark {
+    // SPEC-KIT §6 ERRATA v1.4 — applique blanc à TOUS les styles via base dark textTheme
+    // Résout le bug récurrent "texte noir sur fond noir" : les styles non explicités
+    // héritaient de Colors.black car TextTheme() partiel ne couvre pas toutes les variantes.
+    final baseTextTheme = ThemeData.dark().textTheme;
     return ThemeData(
       brightness: Brightness.dark,
       scaffoldBackgroundColor: A2Colors.bg,
@@ -15,16 +19,26 @@ class A2Theme {
         error: A2Colors.rouge,
       ),
       fontFamily: 'system-ui',
-      textTheme: const TextTheme(
-        bodyLarge: TextStyle(color: A2Colors.blanc, fontWeight: FontWeight.w700),
-        bodyMedium: TextStyle(color: A2Colors.blanc),
-        labelSmall: TextStyle(
-          color: A2Colors.gris1, // gris2 trop sombre sur fond dark — v1.4
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 1.5,
-        ),
-      ),
+      textTheme: baseTextTheme
+          .apply(
+            bodyColor: A2Colors.blanc,
+            displayColor: A2Colors.blanc,
+          )
+          .copyWith(
+            bodyLarge: baseTextTheme.bodyLarge?.copyWith(
+              color: A2Colors.blanc,
+              fontWeight: FontWeight.w700,
+            ),
+            bodyMedium: baseTextTheme.bodyMedium?.copyWith(
+              color: A2Colors.blanc,
+            ),
+            labelSmall: baseTextTheme.labelSmall?.copyWith(
+              color: A2Colors.gris1, // gris2 trop sombre sur fond dark — v1.4
+              fontSize: 10,
+              fontWeight: FontWeight.w900,
+              letterSpacing: 1.5,
+            ),
+          ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: A2Colors.surface,
