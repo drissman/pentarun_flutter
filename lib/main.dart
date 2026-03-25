@@ -73,19 +73,25 @@ class _AuthGateState extends State<_AuthGate> {
   void initState() {
     super.initState();
     _init();
-    Supabase.instance.client.auth.onAuthStateChange.listen((data) async {
+    Supabase.instance.client.auth.onAuthStateChange.listen((data) {
       if (!mounted) return;
       final user = data.session?.user;
       if (user == null) {
         if (mounted) setState(() { _user = null; _profile = null; _loading = false; });
       } else {
-        try {
-          final p = await ProfileService.getCurrentProfile();
-          if (mounted) setState(() { _user = user; _profile = p; _loading = false; });
-        } catch (_) {
-          // Profil inaccessible (offline?) — on affiche quand même l'app
-          if (mounted) setState(() { _user = user; _profile = null; _loading = false; });
-        }
+        // Future.delayed(zero) brise le deadlock potentiel :
+        // supabase_flutter émet onAuthStateChange de façon synchrone pendant
+        // signUp/signIn — si on appelle getCurrentProfile() immédiatement,
+        // le client interne est encore verrouillé → hang infini.
+        Future.delayed(Duration.zero, () async {
+          if (!mounted) return;
+          try {
+            final p = await ProfileService.getCurrentProfile();
+            if (mounted) setState(() { _user = user; _profile = p; _loading = false; });
+          } catch (_) {
+            if (mounted) setState(() { _user = user; _profile = null; _loading = false; });
+          }
+        });
       }
     });
   }
