@@ -108,6 +108,10 @@ Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a u
 | Fix thème texte noir sur fond noir (§11.1 ERRATA) | §6 A2UI | ✅ Corrigé v2.0 |
 | Fix spinner visible état loading (§11.2 ERRATA) | §3.1 §3.3 | ✅ Corrigé v2.0 |
 | Fix Google OAuth spinner infini (§11.3 ERRATA) | §3.1 | ✅ Corrigé v2.1 |
+| Fix PKCE code non échangé retour OAuth (§11.4 ERRATA) | §3.1 | ✅ Corrigé v2.1 |
+| Modification profil depuis l'app (icône compte SetupScreen) | §3.3 | ✅ Implémenté v2.1 |
+| Suppression compte + cascade profiles/results (§3.4) | §3.4 | ✅ Implémenté v2.1 |
+| Fix spinner infini suppression compte (§11.5 ERRATA) | §3.4 | ✅ Corrigé v2.1 |
 
 #### Phase 2.2 — Compétition Connectée 📋
 
@@ -217,6 +221,8 @@ Avant tout merge / release, valider :
 | `CircularProgressIndicator(color: Colors.black)` dans bouton | Invisible sur fond sombre en état désactivé → §11.2 ERRATA |
 | Appel DB Supabase synchrone dans `onAuthStateChange` | Deadlock client interne supabase_flutter → utiliser Future.delayed(Duration.zero) |
 | `url_launcher` pour OAuth redirect sur Flutter Web | window.open bloqué silencieusement après await PKCE → utiliser window.location.href → §11.3 ERRATA |
+| Compter sur `supabase_flutter._handleInitialUri()` seul pour PKCE | app_links échoue silencieusement → échange explicite dans main() obligatoire → §11.4 ERRATA |
+| `signOut()` après suppression serveur du compte | POST /auth/v1/logout avec JWT invalide → hang → utiliser SignOutScope.local → §11.5 ERRATA |
 
 ---
 

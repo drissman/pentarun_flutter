@@ -110,10 +110,29 @@ PENTARUN v2.0 devient une **plateforme de compétition connectée** :
 1. Inscription plateforme (email ou Gmail)
 2. Renseigne profil : nom, sexe, date de naissance, poids, taille
 3. Choisit son niveau habituel et KB habituel
-4. Reçoit invitation d'un organisateur pour une compétition
-5. Confirmé dans la vague → profil pré-rempli chez le juge
-6. Post-course : résultat enregistré automatiquement dans son historique
+4. Peut modifier son profil à tout moment (bouton compte — écran principal)
+5. Reçoit invitation d'un organisateur pour une compétition
+6. Confirmé dans la vague → profil pré-rempli chez le juge
+7. Post-course : résultat enregistré automatiquement dans son historique
 ```
+
+### §3.4 — Suppression de compte
+
+La suppression de compte est irréversible et déclenche une cascade complète :
+
+```
+auth.users (supprimé via Edge Function delete-account)
+      │  ON DELETE CASCADE
+      ▼
+profiles (supprimé automatiquement)
+      │  ON DELETE CASCADE
+      ▼
+results (tous les résultats supprimés)
+```
+
+**Implémentation** : Edge Function Supabase (`delete-account`) appelée avec le JWT de l'utilisateur connecté. La fonction vérifie le JWT via le client anonyme, puis supprime l'utilisateur via le client `service_role`. Après suppression, la session est effacée localement (`SignOutScope.local`) sans appel réseau, l'utilisateur étant déjà invalidé côté serveur.
+
+**Accès** : Écran "Modifier mon profil" → bouton "SUPPRIMER MON COMPTE" (avec dialog de confirmation).
 
 ---
 
@@ -448,6 +467,36 @@ Tous les errata des versions précédentes restent en vigueur :
 **Correction** : Remplacer `signInWithOAuth()` par `getOAuthSignInUrl()` (construction locale de l'URL PKCE, pas d'appel réseau) puis naviguer via `window.location.href = url` (implémenté dans `lib/utils/web_redirect_web.dart` via import conditionnel `dart.library.html`). Cette navigation directe ne nécessite pas de user-activation et ne peut pas être bloquée par le popup blocker.
 
 **Règle** : Sur Flutter Web, tout OAuth redirect doit utiliser `window.location.href` et non `window.open`. Ne jamais déléguer la navigation OAuth à `url_launcher` sur web.
+
+### §11.4 — ERRATA v2.1 — Code PKCE non échangé au retour OAuth
+
+**Problème** : Après redirection OAuth Google, l'URL contient `?code=<uuid>`. `supabase_flutter._handleInitialUri()` est censé détecter ce paramètre et appeler `exchangeCodeForSession()` automatiquement. En pratique, le mécanisme `app_links` qui capture l'URL initiale échoue silencieusement (timing d'instantiation) → la session n'est jamais établie → `_AuthGate` affiche `AuthScreen` en boucle malgré un code PKCE valide dans l'URL.
+
+**Correction** : Échange explicite dans `main()` avant `runApp()` :
+```dart
+if (kIsWeb) {
+  final code = Uri.base.queryParameters['code'];
+  if (code != null) {
+    try {
+      await Supabase.instance.client.auth.exchangeCodeForSession(code);
+    } catch (_) {}
+  }
+}
+```
+Ce code s'exécute avant la construction de `_AuthGate`, garantissant que la session est présente dès le premier `build()`.
+
+**Règle** : Sur Flutter Web PKCE, toujours ajouter l'échange explicite du code dans `main()` en complément du mécanisme automatique `supabase_flutter`.
+
+### §11.5 — ERRATA v2.1 — Spinner infini après suppression compte (signOut hang)
+
+**Problème** : Après `DeleteAccountService.deleteAccount()`, la Edge Function supprime l'utilisateur dans `auth.users`. L'appel suivant `_client.auth.signOut()` tente de POST sur `/auth/v1/logout` avec un JWT appartenant à un utilisateur inexistant. La requête peut lever une exception ou ne jamais se résoudre → le `finally` absent dans la version initiale laissait `_loading = true` → spinner infini.
+
+**Correction** :
+1. `SignOutScope.local` : efface uniquement la session locale sans appel réseau, évitant le POST sur `/auth/v1/logout`.
+2. `.timeout(const Duration(seconds: 10))` sur `functions.invoke` pour débloquer si le réseau est lent.
+3. Bloc `finally` dans `_confirmDeleteAccount` pour garantir `_loading = false` dans tous les cas.
+
+**Règle** : Après toute opération serveur qui invalide le compte utilisateur, utiliser `signOut(scope: SignOutScope.local)` et non `signOut()`.
 
 ---
 
