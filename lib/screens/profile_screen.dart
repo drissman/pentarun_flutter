@@ -153,7 +153,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
       await DeleteAccountService.deleteAccount();
       // La suppression déconnecte automatiquement — _AuthGate détecte user == null
     } catch (e) {
-      if (mounted) setState(() { _error = e.toString(); _loading = false; });
+      if (mounted) setState(() => _error = e.toString());
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
