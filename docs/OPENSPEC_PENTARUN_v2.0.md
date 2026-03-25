@@ -1,9 +1,9 @@
 # OPENSPEC PENTARUN — v2.0
 
 > **Kinetic Axiom / KAFORGE**
-> Version : 2.0 — Plateforme Compétitive en Ligne
-> Précédente version : 1.4 (outil local mono-dispositif)
-> Date : 24 Mars 2026
+> Version : 2.2 — Compétition Connectée Complète
+> Précédente version : 2.1 (identité & profils)
+> Date : 25 Mars 2026
 > Frameworks : OPENSPEC · SPEC-KIT v1.0 · A2UI v1.3
 
 ---
@@ -40,29 +40,31 @@ PENTARUN v2.0 devient une **plateforme de compétition connectée** :
 ### §2.1 — Vue d'ensemble
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                   DISPOSITIFS                       │
-│                                                     │
-│  Tablette Juge    Tablette Juge    Vue Directeur    │
-│  (Flutter Web)    (Flutter Web)    (Flutter Web)    │
-│       │                │                │           │
-└───────┼────────────────┼────────────────┼───────────┘
-        │                │                │
-        ▼                ▼                ▼
-┌─────────────────────────────────────────────────────┐
-│              NETLIFY (Frontend statique)            │
-│              app Flutter compilée                   │
-└─────────────────────────────┬───────────────────────┘
-                              │ HTTPS / WebSocket
-                              ▼
-┌─────────────────────────────────────────────────────┐
-│                  SUPABASE (Backend)                 │
-│                                                     │
-│  Auth (email/Google/SSO)                            │
-│  PostgreSQL (données persistantes)                  │
-│  Realtime (synchronisation multi-juges)             │
-│  Row Level Security (isolation par rôle)            │
-└─────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│                         DISPOSITIFS                              │
+│                                                                  │
+│  Tablette Juge    Tablette Juge    Vue Directeur    Spectateur   │
+│  (Flutter Web)    (Flutter Web)    (Flutter Web)   (navigateur)  │
+│       │                │                │               │        │
+└───────┼────────────────┼────────────────┼───────────────┼────────┘
+        │                │                │               │
+        ▼                ▼                ▼               ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                  NETLIFY (Frontend statique)                     │
+│                  app Flutter compilée                            │
+│   pentarun.netlify.app  |  pentarun.netlify.app/#/live/{id}      │
+└──────────────────────────────┬───────────────────────────────────┘
+                               │ HTTPS / WebSocket
+                               ▼
+┌──────────────────────────────────────────────────────────────────┐
+│                     SUPABASE (Backend)                           │
+│                                                                  │
+│  Auth (email/Google/SSO)                                         │
+│  PostgreSQL (données persistantes)                               │
+│  Realtime (synchronisation multi-juges + spectateurs)            │
+│  Row Level Security (isolation par rôle + accès anon spectateur) │
+│  Edge Functions (delete-account)                                 │
+└──────────────────────────────────────────────────────────────────┘
         │
         │ BLE (optionnel, local)
         ▼
@@ -332,20 +334,48 @@ Si `hr_data` est absent :
 
 Supabase Realtime (basé PostgreSQL LISTEN/NOTIFY + WebSocket) assure la synchronisation entre les dispositifs sans code serveur custom.
 
+**`RealtimeService`** (lib/services/realtime_service.dart) — API statique :
+- `subscribeToWave(waveId, {onAthleteUpdated, onWaveUpdated?})` — s'abonne aux tables `wave_athletes` et `waves` filtrées par `wave_id`
+- `unsubscribe(key)` / `unsubscribeAll()` — gestion cycle de vie
+
 ### §7.2 — Canaux de synchronisation
 
 | Canal | Émetteur | Récepteurs | Événements |
 |---|---|---|---|
-| `competition:{id}` | Organisateur | Tous | Statut compétition, ouverture/fermeture |
-| `wave:{id}` | Juge de la vague | Directeur, spectateurs | Validation station, finish, no-count |
-| `results:{competition_id}` | Système | Tous | Nouveaux résultats officiels |
+| `wave:{id}` | Juge de la vague | Directeur, spectateurs | Validation station, finish, no-count, statut vague |
 
-### §7.3 — Gestion déconnexion réseau
+**Abonnement par vague** (non par compétition) : chaque vague a son canal `wave:{waveId}`. Le DirectorScreen et le SpectatorScreen s'abonnent à toutes les vagues d'une compétition via un `Future.wait` + boucle `subscribeToWave`.
 
-Gymnases = wifi instable. Règle critique :
-- Le juge continue de fonctionner **offline** (état local Flutter)
-- À la reconnexion : synchronisation automatique via Supabase Realtime
-- Horodatage absolu (DateTime.now()) — anti-drift §4.2 v1.x conservé
+**Écrans concernés :**
+
+| Écran | Rôle | Accès auth | Abonnements |
+|---|---|---|---|
+| `RacingScreen` | Juge | Oui | Aucun (émetteur uniquement via `WaveService.pushProgress`) |
+| `DirectorScreen` | Organisateur | Oui | Toutes les vagues de la compétition |
+| `SpectatorScreen` | Public | **Non** | Toutes les vagues de la compétition |
+
+**URL Spectateur** : `https://pentarun.netlify.app/#/live/{competitionId}`
+- Fragment `#/live/{id}` détecté dans `main()` avant `runApp()` → bypass `_AuthGate` → `SpectatorScreen` directement
+- RLS Supabase : politiques `anon SELECT` sur `competitions` / `waves` / `wave_athletes` (uniquement `statut = 'en_cours'`)
+- `display_name` dénormalisé dans `wave_athletes` à l'inscription → pas de jointure `profiles` pour le spectateur
+
+### §7.3 — Gestion déconnexion réseau (Offline Queue)
+
+Gymnases = wifi instable. Architecture :
+
+**Offline Queue** (lib/services/offline_queue.dart) — import conditionnel stub/web :
+- Sur Flutter Web : stockage localStorage (`pentarun_offline_queue`) via `dart:html`
+- Sur autres plateformes : no-op stub
+
+**Comportement dans AppState :**
+1. `validateStation()` → `WaveService.pushProgress()` :
+   - **Succès** → `offlineFlush()` rejoue les entrées en attente
+   - **Échec réseau** → `offlineEnqueue({waveAthleteId, stationActuelle, splitsMs, ...})`
+2. À chaque push réussi, la file est vidée automatiquement (idempotent : la dernière progression écrase les précédentes en BDD)
+
+**Règle** : Le chrono local est toujours prioritaire. `pushProgress` est **fire-and-forget** — jamais de `await` bloquant dans `validateStation`.
+
+**Horodatage absolu** (DateTime.now()) — anti-drift §4.2 v1.x conservé.
 
 ---
 
@@ -358,12 +388,12 @@ Gymnases = wifi instable. Règle critique :
 - Page "Mon PENTARUN"
 - Migration `setup_screen` : recherche profil existant
 
-### Phase 2.2 — Compétition Connectée
-- Création compétition par organisateur
-- Inscription athlètes à une vague
-- Synchronisation temps réel juges ↔ serveur
-- Vue directeur (toutes vagues simultanées)
-- Résultats live spectateurs
+### Phase 2.2 — Compétition Connectée ✅
+- **Sprint 1** : Schéma Supabase — tables `competitions`, `waves`, `wave_athletes` + RLS + Realtime publication + migration `results.wave_id`
+- **Sprint 2** : `CompetitionListScreen` + `CompetitionCreateScreen` — création compétition, gestion vagues, inscription athlètes (`_EnrollAthleteDialog`)
+- **Sprint 3** : `WaveJoinScreen` — le juge rejoint une vague connectée en 3 étapes (compétition → vague → athlètes) puis démarre le chrono
+- **Sprint 4** : `DirectorScreen` — tableau de bord temps réel multi-vagues, chronos live, classements provisoires, barre progression stations
+- **Sprint 5** : `SpectatorScreen` (URL publique `/#/live/{id}`) + `OfflineQueue` (localStorage outbox pour pushProgress sur wifi instable)
 
 ### Phase 2.3 — Classements & Communauté
 - `scorePlateforme` calculé sur tous les résultats
@@ -495,9 +525,20 @@ camera: ^0.11.0                         # Accès caméra Flutter
 
 | Exigence | Référence | État |
 |---|---|---|
-| Multi-vagues temps réel | §7.1 | 📋 Phase 2.2 |
-| Vue directeur | §7.2 | 📋 Phase 2.2 |
-| Gestion offline/reconnexion | §7.3 | 📋 Phase 2.2 |
+| Schéma Supabase (competitions / waves / wave_athletes) | §7.1 | ✅ Implémenté Sprint 1 |
+| RLS organisateur + juge + résultats | §7.1 | ✅ Implémenté Sprint 1 |
+| Création / gestion compétition | §8 Phase 2.2 | ✅ Implémenté Sprint 2 |
+| Inscription athlètes à une vague | §7.1 | ✅ Implémenté Sprint 2 |
+| WaveJoinScreen — juge rejoint une vague | §7.2 | ✅ Implémenté Sprint 3 |
+| Synchronisation temps réel juges ↔ serveur | §7.1 §7.2 | ✅ Implémenté Sprint 3 |
+| DirectorScreen — toutes vagues simultanées | §7.2 | ✅ Implémenté Sprint 4 |
+| Chronos live + classements provisoires | §7.2 | ✅ Implémenté Sprint 4 |
+| SpectatorScreen — résultats live sans auth | §7.2 | ✅ Implémenté Sprint 5 |
+| URL publique `/#/live/{competitionId}` | §7.2 | ✅ Implémenté Sprint 5 |
+| Offline Queue (localStorage outbox) | §7.3 | ✅ Implémenté Sprint 5 |
+| Replay automatique au retour réseau | §7.3 | ✅ Implémenté Sprint 5 |
+| RLS anon SELECT spectateurs | §7.2 §7.3 | ✅ Migration 002 |
+| display_name dénormalisé wave_athletes | §7.2 | ✅ Migration 002 |
 
 ### §9.3 — Phase 3
 
@@ -586,7 +627,23 @@ Ce code s'exécute avant la construction de `_AuthGate`, garantissant que la ses
 
 **Règle** : Après toute opération serveur qui invalide le compte utilisateur, utiliser `signOut(scope: SignOutScope.local)` et non `signOut()`.
 
+### §11.6 — ERRATA v2.2 — uuid_generate_v4() inexistant dans le contexte migration
+
+**Problème** : La migration SQL initiale utilisait `uuid_generate_v4()` (extension `uuid-ossp`) pour les PRIMARY KEY par défaut. Dans le contexte d'exécution des migrations Supabase (`supabase db push`), l'extension n'est pas chargée → `ERROR: function uuid_generate_v4() does not exist`.
+
+**Correction** : Remplacer par `gen_random_uuid()`, fournie nativement par l'extension `pgcrypto` toujours disponible dans PostgreSQL ≥ 13 (dont Supabase).
+
+**Règle** : Toutes les colonnes `UUID DEFAULT ...` doivent utiliser `gen_random_uuid()` dans les migrations PENTARUN. Ne jamais utiliser `uuid_generate_v4()`.
+
+### §11.7 — ERRATA v2.2 — FilterType inexistant (realtime_client 2.7.1)
+
+**Problème** : Le package `realtime_client 2.7.1` (inclus via `supabase_flutter ^2.8.4`) a renommé l'enum `FilterType` en `PostgresChangeFilterType`. L'ancien nom n'existe plus → erreur de compilation `Undefined name 'FilterType'`.
+
+**Correction** : Utiliser `PostgresChangeFilterType.eq` dans tous les appels `PostgresChangeFilter(type: ...)`.
+
+**Règle** : Lors de toute mise à jour de `supabase_flutter`, vérifier les renommages d'enum dans `realtime_client`. Le nom `PostgresChangeFilterType` est le nom stable depuis 2.7.x.
+
 ---
 
-*OPENSPEC PENTARUN v2.0 · KAFORGE · Kinetic Axiom*
+*OPENSPEC PENTARUN v2.2 · KAFORGE · Kinetic Axiom*
 *Conforme SPEC-KIT v1.0 · A2UI v1.3*

@@ -1,7 +1,7 @@
 # SPEC-KIT — Guide de Conformité et Validation KAFORGE
 
 > **Kinetic Axiom / KAFORGE** · Version : 1.0
-> Dernière mise à jour : 24 Mars 2026
+> Dernière mise à jour : 25 Mars 2026
 
 ---
 
@@ -62,7 +62,7 @@ Le SPEC-KIT inclut un mécanisme d'élagage explicite : toute fonctionnalité d�
 
 Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a un périmètre fermé — on ne commence pas la Phase N+1 tant que la Phase N n'est pas en statut `✅`.
 
-### Phase actuelle : 1.4
+### Phase actuelle : 2.2
 
 #### Phase 1.3 — Dashboard UX ✅
 
@@ -113,14 +113,67 @@ Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a u
 | Suppression compte + cascade profiles/results (§3.4) | §3.4 | ✅ Implémenté v2.1 |
 | Fix spinner infini suppression compte (§11.5 ERRATA) | §3.4 | ✅ Corrigé v2.1 |
 
-#### Phase 2.2 — Compétition Connectée 📋
+#### Phase 2.2 — Compétition Connectée ✅
+
+**Sprint 1 — Schéma Supabase**
 
 | Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
 |---|---|---|
-| Multi-vagues temps réel (Supabase) | §7.1 | 📋 Phase 2.2 |
-| Vue directeur compétition | §7.2 | 📋 Phase 2.2 |
-| Gestion offline / reconnexion | §7.3 | 📋 Phase 2.2 |
-| Résultats live spectateurs | §7.2 | 📋 Phase 2.2 |
+| Table `competitions` + RLS organisateur | §7.1 | ✅ Implémenté v2.2 |
+| Table `waves` + RLS | §7.1 | ✅ Implémenté v2.2 |
+| Table `wave_athletes` + RLS + Realtime | §7.1 | ✅ Implémenté v2.2 |
+| Colonne nullable `results.wave_id` | §7.1 | ✅ Implémenté v2.2 |
+| Migration 001 (`gen_random_uuid()` — §11.6) | §11.6 ERRATA | ✅ Corrigé v2.2 |
+| Fix `PostgresChangeFilterType` (§11.7) | §11.7 ERRATA | ✅ Corrigé v2.2 |
+
+**Sprint 2 — Gestion compétitions (organisateur)**
+
+| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+|---|---|---|
+| `CompetitionCreateScreen` | §8 Phase 2.2 | ✅ Implémenté v2.2 |
+| `CompetitionListScreen` (mes compétitions) | §8 Phase 2.2 | ✅ Implémenté v2.2 |
+| `_CompetitionDetailScreen` + statuts LANCER/CLÔTURER | §8 Phase 2.2 | ✅ Implémenté v2.2 |
+| `_AddWaveDialog` (numéro + niveau) | §7.1 | ✅ Implémenté v2.2 |
+| `_EnrollAthleteDialog` (recherche profil + KB) | §7.1 | ✅ Implémenté v2.2 |
+| `CompetitionService` + `WaveService` | §7.1 | ✅ Implémenté v2.2 |
+
+**Sprint 3 — Juge rejoint une vague**
+
+| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+|---|---|---|
+| `WaveJoinScreen` (3 étapes : comp → vague → athlètes) | §7.2 | ✅ Implémenté v2.2 |
+| `AppState.setCompetitionContext()` + `addAthleteFromWave()` | §7.2 | ✅ Implémenté v2.2 |
+| Push progression Realtime dans `validateStation()` | §7.1 §7.2 | ✅ Implémenté v2.2 |
+| Push scellement dans `sealAthlete()` | §7.1 | ✅ Implémenté v2.2 |
+| Bouton "REJOINDRE UNE VAGUE CONNECTÉE" SetupScreen | §7.2 | ✅ Implémenté v2.2 |
+| Profil complet joint (poids/taille/sexe/âge → coeff) | §5.4 §5.5 | ✅ Implémenté v2.2 |
+
+**Sprint 4 — Vue Directeur temps réel**
+
+| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+|---|---|---|
+| `DirectorScreen` — toutes vagues en temps réel | §7.2 | ✅ Implémenté v2.2 |
+| Chargement parallèle vagues + athlètes (`Future.wait`) | §7.2 | ✅ Implémenté v2.2 |
+| Abonnement Realtime par vague (`subscribeToWave`) | §7.1 | ✅ Implémenté v2.2 |
+| Chrono live par vague (Ticker flutter/scheduler) | §7.2 | ✅ Implémenté v2.2 |
+| `_WavePanel` — header statut + chrono + liste athlètes | §7.2 | ✅ Implémenté v2.2 |
+| `_AthleteRow` — barre stations + podium + temps final | §7.2 | ✅ Implémenté v2.2 |
+| Layout responsive (1/2/3 colonnes) | §7.2 | ✅ Implémenté v2.2 |
+| `_PulseDot` LIVE animé | §7.2 | ✅ Implémenté v2.2 |
+| Icône moniteur CompetitionDetailScreen (si actif) | §7.2 | ✅ Implémenté v2.2 |
+
+**Sprint 5 — Spectateurs live + offline queue**
+
+| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+|---|---|---|
+| `SpectatorScreen` — vue publique sans authentification | §7.2 | ✅ Implémenté v2.2 |
+| URL publique `/#/live/{competitionId}` (fragment hash) | §7.2 | ✅ Implémenté v2.2 |
+| Bypass `_AuthGate` — détection fragment dans `main()` | §7.2 | ✅ Implémenté v2.2 |
+| RLS anon SELECT (migrations 002) | §7.2 §7.3 | ✅ Implémenté v2.2 |
+| `display_name` dénormalisé (pas de jointure profiles anon) | §7.2 | ✅ Implémenté v2.2 |
+| Offline Queue (localStorage outbox) | §7.3 | ✅ Implémenté v2.2 |
+| Replay automatique (`offlineFlush`) au prochain push réussi | §7.3 | ✅ Implémenté v2.2 |
+| Bouton copier lien spectateurs (icône link CompetitionDetailScreen) | §7.2 | ✅ Implémenté v2.2 |
 
 #### Phase 2.3 — Classements & Communauté 📋
 
@@ -235,7 +288,12 @@ Avant tout merge / release, valider :
 | `url_launcher` pour OAuth redirect sur Flutter Web | window.open bloqué silencieusement après await PKCE → utiliser window.location.href → §11.3 ERRATA |
 | Compter sur `supabase_flutter._handleInitialUri()` seul pour PKCE | app_links échoue silencieusement → échange explicite dans main() obligatoire → §11.4 ERRATA |
 | `signOut()` après suppression serveur du compte | POST /auth/v1/logout avec JWT invalide → hang → utiliser SignOutScope.local → §11.5 ERRATA |
+| `uuid_generate_v4()` dans migration SQL | Extension uuid-ossp non chargée dans supabase db push → utiliser gen_random_uuid() → §11.6 ERRATA |
+| `FilterType.eq` dans PostgresChangeFilter | Renommé PostgresChangeFilterType.eq depuis realtime_client 2.7.1 → §11.7 ERRATA |
+| `await WaveService.pushProgress()` dans validateStation | Bloque le chrono si réseau lent → toujours fire-and-forget + catchError → §7.3 |
+| Jointure `profiles!inner(...)` pour accès spectateur | Nécessite auth → utiliser display_name dénormalisé + anon SELECT → §7.2 |
+| Politiques RLS manquantes pour `anon` | Spectateur voit "permission denied" → ajouter policies TO anon sur competitions/waves/wave_athletes → §7.2 |
 
 ---
 
-*SPEC-KIT v1.0 · KAFORGE · Kinetic Axiom*
+*SPEC-KIT v1.0 · KAFORGE · Kinetic Axiom — Phase 2.2 complète*
