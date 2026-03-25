@@ -39,6 +39,9 @@ class AuthService {
     final res = await _client.auth.getOAuthSignInUrl(
       provider: OAuthProvider.google,
       redirectTo: 'https://pentarun.netlify.app',
+    ).timeout(
+      const Duration(seconds: 5),
+      onTimeout: () => throw Exception('OAuth URL timeout — vérifiez la connexion.'),
     );
     webRedirect(res.url);
   }

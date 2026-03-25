@@ -1,4 +1,5 @@
 // SPEC-KIT §2 — Initialisation Supabase + routage auth-aware
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:pentarun_flutter/app.dart';
@@ -9,14 +10,37 @@ import 'package:pentarun_flutter/screens/profile_screen.dart';
 import 'package:pentarun_flutter/services/profile_service.dart';
 import 'package:pentarun_flutter/state/app_state.dart';
 import 'package:pentarun_flutter/theme/a2ui_theme.dart';
+import 'package:pentarun_flutter/utils/web_gotrue_storage.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   if (SupabaseConfig.isConfigured) {
+    // SPEC-KIT §3.1 ERRATA v2.1 — WebGotrueAsyncStorage remplace
+    // SharedPreferencesGotrueAsyncStorage qui hang sur Flutter Web.
+    // localStorage JS est synchrone → jamais bloqué. PKCE conservé pour
+    // la récupération de session correcte (?code= → exchangeCodeForSession).
     await Supabase.initialize(
       url: SupabaseConfig.supabaseUrl,
       anonKey: SupabaseConfig.supabaseAnonKey,
+      authOptions: FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+        pkceAsyncStorage: WebGotrueAsyncStorage(),
+      ),
     );
+    // SPEC-KIT §3.1 ERRATA v2.1 — Échange explicite du code PKCE OAuth
+    // supabase_flutter._handleInitialUri() devrait détecter ?code= automatiquement
+    // via app_links, mais échoue parfois (timing ou parsing). On l'échange manuellement
+    // avant runApp pour garantir que la session existe dès le premier build de _AuthGate.
+    if (kIsWeb) {
+      final code = Uri.base.queryParameters['code'];
+      if (code != null) {
+        try {
+          await Supabase.instance.client.auth.exchangeCodeForSession(code);
+        } catch (_) {
+          // Code déjà échangé ou expiré — ignorer
+        }
+      }
+    }
   }
   runApp(const PentarunRoot());
 }
