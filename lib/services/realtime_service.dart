@@ -27,7 +27,7 @@ class RealtimeService {
       schema: 'public',
       table: 'wave_athletes',
       filter: PostgresChangeFilter(
-        type: FilterType.eq,
+        type: PostgresChangeFilterType.eq,
         column: 'wave_id',
         value: waveId,
       ),
@@ -44,7 +44,7 @@ class RealtimeService {
       schema: 'public',
       table: 'wave_athletes',
       filter: PostgresChangeFilter(
-        type: FilterType.eq,
+        type: PostgresChangeFilterType.eq,
         column: 'wave_id',
         value: waveId,
       ),
@@ -62,7 +62,7 @@ class RealtimeService {
         schema: 'public',
         table: 'waves',
         filter: PostgresChangeFilter(
-          type: FilterType.eq,
+          type: PostgresChangeFilterType.eq,
           column: 'id',
           value: waveId,
         ),
@@ -107,7 +107,7 @@ class RealtimeService {
       schema: 'public',
       table: 'waves',
       filter: PostgresChangeFilter(
-        type: FilterType.eq,
+        type: PostgresChangeFilterType.eq,
         column: 'competition_id',
         value: competitionId,
       ),

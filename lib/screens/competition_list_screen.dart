@@ -6,6 +6,7 @@ import 'package:pentarun_flutter/models/wave.dart';
 import 'package:pentarun_flutter/models/wave_athlete.dart';
 import 'package:pentarun_flutter/models/athlete_profile.dart';
 import 'package:pentarun_flutter/screens/competition_create_screen.dart';
+import 'package:pentarun_flutter/screens/director_screen.dart';
 import 'package:pentarun_flutter/services/competition_service.dart';
 import 'package:pentarun_flutter/services/profile_service.dart';
 import 'package:pentarun_flutter/services/wave_service.dart';
@@ -260,6 +261,14 @@ class _CompetitionDetailScreenState extends State<_CompetitionDetailScreen> {
           ),
         ),
         actions: [
+          if (_competition.isActive)
+            IconButton(
+              icon: const Icon(Icons.monitor, color: A2Colors.cyan),
+              tooltip: 'Vue directeur',
+              onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                builder: (_) => DirectorScreen(competition: _competition),
+              )),
+            ),
           if (!_competition.isFinished)
             TextButton(
               onPressed: _toggleStatut,
