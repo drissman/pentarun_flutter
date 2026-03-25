@@ -27,22 +27,44 @@ class _AuthScreenState extends State<AuthScreen> {
   }
 
   Future<void> _submit() async {
+    final email    = _emailCtrl.text.trim();
+    final password = _passwordCtrl.text;
+
+    // Validation locale avant tout appel réseau
+    if (email.isEmpty || password.isEmpty) {
+      setState(() => _error = 'Email et mot de passe requis.');
+      return;
+    }
+    if (!email.contains('@')) {
+      setState(() => _error = 'Adresse email invalide.');
+      return;
+    }
+    if (password.length < 6) {
+      setState(() => _error = 'Mot de passe minimum 6 caractères.');
+      return;
+    }
+
     setState(() { _loading = true; _error = null; _info = null; });
     try {
       if (_isLogin) {
         final res = await AuthService.signInWithEmail(
-          email: _emailCtrl.text.trim(),
-          password: _passwordCtrl.text,
+          email: email,
+          password: password,
+        ).timeout(
+          const Duration(seconds: 15),
+          onTimeout: () => throw Exception('Délai dépassé — vérifiez votre connexion.'),
         );
         if (res.session == null && mounted) {
           setState(() => _error = 'Connexion échouée. Vérifiez vos identifiants.');
         }
       } else {
         final res = await AuthService.signUpWithEmail(
-          email: _emailCtrl.text.trim(),
-          password: _passwordCtrl.text,
+          email: email,
+          password: password,
+        ).timeout(
+          const Duration(seconds: 15),
+          onTimeout: () => throw Exception('Délai dépassé — vérifiez votre connexion.'),
         );
-        // Si pas de session → email de confirmation requis
         if (res.session == null && mounted) {
           setState(() => _info =
               'Email envoyé ! Confirmez votre adresse mail puis reconnectez-vous.');
