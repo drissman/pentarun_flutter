@@ -10,6 +10,7 @@ import 'package:pentarun_flutter/models/race_result.dart';
 import 'package:pentarun_flutter/models/sex.dart';
 import 'package:pentarun_flutter/models/station.dart';
 import 'package:pentarun_flutter/services/results_service.dart';
+import 'package:pentarun_flutter/services/wave_service.dart';
 
 // SPEC-KIT §4 — Machine à états : §4.1→setup | §4.2→racing | §4.3→summary
 enum AppPhase { setup, racing, summary }
@@ -33,6 +34,13 @@ class AppState extends ChangeNotifier {
   String? _toast;
   String? get toast => _toast;
 
+  // SPEC-KIT §7.1 — Phase 2.2 : contexte compétition (null = mode libre Phase 1)
+  String? _currentWaveId;
+  String? _currentCompetitionId;
+  String? get currentWaveId => _currentWaveId;
+  String? get currentCompetitionId => _currentCompetitionId;
+  bool get isConnectedMode => _currentWaveId != null;
+
   // Form state
   // SPEC-KIT §5.1 — Valeurs par défaut athlète référence CHALLENGER (75kg, 175cm, 24kg KB)
   String formName = '';
@@ -51,6 +59,48 @@ class AppState extends ChangeNotifier {
       _elapsedMs = DateTime.now().difference(_startTime!).inMilliseconds;
       notifyListeners();
     }
+  }
+
+  // ─── CONTEXTE COMPÉTITION ────────────────────────────────────────────────────
+  void setCompetitionContext(String competitionId, String waveId) {
+    _currentCompetitionId = competitionId;
+    _currentWaveId = waveId;
+  }
+
+  void clearCompetitionContext() {
+    _currentCompetitionId = null;
+    _currentWaveId = null;
+  }
+
+  // Ajoute un athlète pré-inscrit depuis wave_athletes Supabase
+  void addAthleteFromWave({
+    required String waveAthleteId,
+    required String name,
+    required Level level,
+    required int kbKg,
+    required int heightCm,
+    required int weightKg,
+    required double coeffKb,
+    required EnergyBreakdown energy,
+    required String profileId,
+    double? coeffAge,
+    double? coeffSexe,
+  }) {
+    _athletes.add(Athlete(
+      id: waveAthleteId, // L'ID local = l'ID wave_athletes pour la synchro
+      name: name,
+      level: level,
+      weightKb: kbKg,
+      heightAthlete: heightCm,
+      weightAthlete: weightKg,
+      coeff: coeffKb,
+      energy: energy,
+      profileId: profileId,
+      coeffAge: coeffAge,
+      coeffSexe: coeffSexe,
+      waveAthleteId: waveAthleteId,
+    ));
+    notifyListeners();
   }
 
   // ─── ATHLETES ───────────────────────────────────────────────────────────────
@@ -108,6 +158,8 @@ class AppState extends ChangeNotifier {
     _athletes = [];
     _startTime = null;
     _elapsedMs = 0;
+    _currentWaveId = null;
+    _currentCompetitionId = null;
     formName = '';
     formLevel = Level.decouverte;
     formKb = 16;
@@ -149,6 +201,25 @@ class AppState extends ChangeNotifier {
     }).toList();
     notifyListeners();
     _checkAutoSummary();
+
+    // SPEC-KIT §7.1 — Phase 2.2 : push Realtime intermédiaire (fire-and-forget)
+    if (_currentWaveId != null) {
+      final updated = _athletes.firstWhere((a) => a.id == id, orElse: () => _athletes.first);
+      if (updated.waveAthleteId != null) {
+        WaveService.pushProgress(
+          waveAthleteId: updated.waveAthleteId!,
+          stationActuelle: updated.currentStation,
+          splitsMs: updated.splits
+              .map((s) => s.difference(_startTime!).inMilliseconds)
+              .toList(),
+          statutAthlete: updated.status == AthleteStatus.finished ? 'termine' : 'en_course',
+          noCountEvents: updated.noCountEvents,
+          finalTimeMs: updated.finalTimeMs,
+          officialScore: updated.officialScore,
+          platformScore: updated.platformScore,
+        ).catchError((_) {}); // offline : ignore silencieusement
+      }
+    }
   }
 
   void noCount(String id) {
@@ -232,6 +303,22 @@ class AppState extends ChangeNotifier {
       );
       // Fire-and-forget — SPEC-KIT §7.3
       ResultsService.saveResult(result);
+    }
+
+    // SPEC-KIT §7.1 — Phase 2.2 : marque l'athlète "termine" dans wave_athletes
+    if (_currentWaveId != null && athlete.waveAthleteId != null) {
+      WaveService.pushProgress(
+        waveAthleteId: athlete.waveAthleteId!,
+        stationActuelle: Station.count,
+        splitsMs: athlete.splits
+            .map((s) => s.difference(_startTime!).inMilliseconds)
+            .toList(),
+        statutAthlete: 'termine',
+        noCountEvents: athlete.noCountEvents,
+        finalTimeMs: athlete.finalTimeMs,
+        officialScore: athlete.officialScore,
+        platformScore: athlete.platformScore,
+      ).catchError((_) {}); // offline : ignore silencieusement
     }
   }
 

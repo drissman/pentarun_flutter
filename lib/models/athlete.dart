@@ -28,6 +28,9 @@ class Athlete {
   final double? coeffSexe;       // coeff sexe (Sex)
   final double? platformScore;   // finalTimeMs × coeffKb × coeffAge × coeffSexe
 
+  // SPEC-KIT §7.1 — Phase 2.2 : lien vers wave_athletes (null = mode libre)
+  final String? waveAthleteId;
+
   const Athlete({
     required this.id,
     required this.name,
@@ -49,6 +52,7 @@ class Athlete {
     this.coeffAge,
     this.coeffSexe,
     this.platformScore,
+    this.waveAthleteId,
   });
 
   Athlete copyWith({
@@ -86,6 +90,7 @@ class Athlete {
       profileId: profileId,
       coeffAge: coeffAge,
       coeffSexe: coeffSexe,
+      waveAthleteId: waveAthleteId,
     );
   }
 }
