@@ -376,12 +376,13 @@ Gymnases = wifi instable. Règle critique :
 
 | Exigence | Référence | État |
 |---|---|---|
-| Auth email/Google | §3.1 | 📋 Phase 2.1 |
-| Profil athlète | §3.3 | 📋 Phase 2.1 |
-| Historique performances | §4.1 | 📋 Phase 2.1 |
-| Catégories d'âge | §4.2 | 📋 Phase 2.1 |
-| coeff_age + coeff_sexe | §5.4 §5.5 | 📋 Phase 2.1 |
-| scorePlateforme | §5.2 | 📋 Phase 2.1 |
+| Auth email/Google | §3.1 | ✅ Implémenté |
+| Profil athlète | §3.3 | ✅ Implémenté |
+| Historique performances | §4.1 | ✅ Implémenté |
+| Catégories d'âge | §4.2 | ✅ Implémenté |
+| coeff_age + coeff_sexe | §5.4 §5.5 | ✅ Implémenté |
+| scorePlateforme | §5.2 | ✅ Implémenté |
+| Classement en ligne filtrable | §5.6 | ✅ Implémenté |
 
 ### §9.2 — Phase 2.2
 

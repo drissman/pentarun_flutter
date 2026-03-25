@@ -1,6 +1,7 @@
 // SPEC-KIT §5.2 — Calculateur score plateforme OPENSPEC v2.0
 // scorePlateforme = finalTimeMs × coeff_KB × coeff_age × coeff_sexe
 // Plus le score est bas, meilleur est le classement.
+import 'dart:math' show exp;
 
 class PlatformScoreCalculator {
   PlatformScoreCalculator._();
@@ -39,6 +40,8 @@ class PlatformScoreCalculator {
 
   /// SPEC-KIT §6.4 — TRIMP (Bannister 1991)
   /// b = 1.92 hommes · b = 1.67 femmes
+  // SPEC-KIT §6.4 — TRIMP (Bannister 1991)
+  // Formule exacte : durée_min × ratio × e^(b × ratio)
   static double trimp({
     required double dureeMins,
     required double fcMoy,
@@ -47,6 +50,6 @@ class PlatformScoreCalculator {
   }) {
     final ratio = fcMoy / fcMaxTheorique;
     final b = estHomme ? 1.92 : 1.67;
-    return dureeMins * ratio * (2.718281828 * (b * ratio));
+    return dureeMins * ratio * exp(b * ratio);
   }
 }

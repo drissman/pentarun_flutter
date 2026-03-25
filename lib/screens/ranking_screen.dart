@@ -8,6 +8,16 @@ import 'package:pentarun_flutter/services/results_service.dart';
 import 'package:pentarun_flutter/theme/a2ui_colors.dart';
 import 'package:pentarun_flutter/utils/time_formatter.dart';
 
+// SPEC-KIT §5.4 — Déduit la catégorie d'âge depuis coeff_age (pas de colonne DB)
+AgeCategory _catFromCoeff(double coeff) {
+  if (coeff == 0.980) return AgeCategory.junior;
+  if (coeff == 0.990) return AgeCategory.espoir;
+  if (coeff == 1.000) return AgeCategory.senior;
+  if (coeff == 0.915) return AgeCategory.master1;
+  if (coeff == 0.855) return AgeCategory.master2;
+  return AgeCategory.master3;
+}
+
 class RankingScreen extends StatefulWidget {
   const RankingScreen({super.key});
 
@@ -31,11 +41,13 @@ class _RankingScreenState extends State<RankingScreen> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final r = await ResultsService.getRanking(
+    final raw = await ResultsService.getRanking(
       level: _level.label,
       sexe: _sexe.dbValue,
       categorieAge: _cat.label,
     );
+    // SPEC-KIT §5.6 — Filtre catégorie d'âge côté client depuis coeff_age
+    final r = raw.where((res) => _catFromCoeff(res.coeffAge) == _cat).toList();
     if (mounted) setState(() { _results = r; _loading = false; });
   }
 
@@ -146,7 +158,7 @@ class _RankingScreenState extends State<RankingScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    r.profileId, // Remplacé par displayName une fois jointure disponible
+                    r.athleteDisplayName ?? r.profileId, // SPEC-KIT §5.6 — nom via jointure profiles
                     style: const TextStyle(
                       color: A2Colors.blanc,
                       fontWeight: FontWeight.w900,

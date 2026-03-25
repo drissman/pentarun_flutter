@@ -48,6 +48,9 @@ class ResultsService {
 
   /// Classement intra-niveau + sexe + catégorie d'âge
   /// SPEC-KIT §5.6 — Philosophie B : comparaison d'égal à égal
+  // SPEC-KIT §5.6 — Classement intra-niveau + sexe + catégorie d'âge
+  // La catégorie d'âge est filtrée côté client depuis coeff_age
+  // (age_category n'est pas une colonne stockée — calculée depuis date_naissance)
   static Future<List<RaceResult>> getRanking({
     required String level,
     required String sexe,
@@ -57,7 +60,7 @@ class ResultsService {
     try {
       final data = await _client
           .from('results')
-          .select('*, profiles!inner(sexe, age_category)')
+          .select('*, profiles!inner(nom, prenom, sexe)')
           .eq('level', level)
           .eq('profiles.sexe', sexe)
           .order('platform_score', ascending: true)

@@ -148,7 +148,7 @@ class _AuthScreenState extends State<AuthScreen> {
                         Text(
                           _info!,
                           style: const TextStyle(
-                            color: Color(0xFF10B981),
+                            color: A2Colors.vert, // SPEC-KIT §5.3 — A2Colors obligatoire
                             fontSize: 11,
                             fontWeight: FontWeight.w700,
                           ),

@@ -20,6 +20,8 @@ class RaceResult {
   final double? energyRunKcal;
   final double? energySteelKcal;
   final double? energyTotalKcal;
+  /// Nom affiché — peuplé uniquement lors d'une requête avec jointure profiles
+  final String? athleteDisplayName;
 
   const RaceResult({
     this.id,
@@ -39,9 +41,15 @@ class RaceResult {
     this.energyRunKcal,
     this.energySteelKcal,
     this.energyTotalKcal,
+    this.athleteDisplayName,
   });
 
   factory RaceResult.fromJson(Map<String, dynamic> json) {
+    // Nom athlète depuis la jointure profiles (présent uniquement en classement)
+    final profiles = json['profiles'] as Map<String, dynamic>?;
+    final String? displayName = profiles != null
+        ? '${profiles['prenom']} ${profiles['nom']}'.toUpperCase()
+        : null;
     return RaceResult(
       id: json['id'] as String?,
       profileId: json['profile_id'] as String,
@@ -60,6 +68,7 @@ class RaceResult {
       energyRunKcal: (json['energy_run_kcal'] as num?)?.toDouble(),
       energySteelKcal: (json['energy_steel_kcal'] as num?)?.toDouble(),
       energyTotalKcal: (json['energy_total_kcal'] as num?)?.toDouble(),
+      athleteDisplayName: displayName,
     );
   }
 

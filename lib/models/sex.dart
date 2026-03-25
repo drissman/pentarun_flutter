@@ -10,8 +10,9 @@ enum Sex {
   // SPEC-KIT §5.5 — coeff_sexe
   double get coeff => this == homme ? 1.000 : 0.870;
 
-  String get dbValue => name; // 'homme' ou 'femme'
+  // SPEC-KIT §5.5 — schéma SQL : CHECK (sexe IN ('HOMME', 'FEMME'))
+  String get dbValue => name.toUpperCase(); // 'HOMME' ou 'FEMME'
 
   static Sex fromDb(String value) =>
-      Sex.values.firstWhere((s) => s.name == value);
+      Sex.values.firstWhere((s) => s.name == value.toLowerCase());
 }

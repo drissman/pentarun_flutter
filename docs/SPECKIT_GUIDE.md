@@ -89,16 +89,17 @@ Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a u
 | Affichage EPOC ×1.30 (était ×1.15) | §3.2 ERRATA v1.4 | ✅ Corrigé v1.4 |
 | Affichage h_oh=H×1.22 (était ×1.15) | §3.2 ERRATA v1.4 | ✅ Corrigé v1.4 |
 
-#### Phase 2.1 — Identité & Profils 📋
+#### Phase 2.1 — Identité & Profils ✅
 
 | Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
 |---|---|---|
-| Auth email / Google OAuth | §3.1 | 📋 Phase 2.1 |
-| Profil athlète persistant | §3.3 | 📋 Phase 2.1 |
-| Catégories d'âge (Junior→Master 3) | §4.2 | 📋 Phase 2.1 |
-| coeff_age + coeff_sexe | §5.4 §5.5 | 📋 Phase 2.1 |
-| scorePlateforme | §5.2 | 📋 Phase 2.1 |
-| Historique performances | §4.1 | 📋 Phase 2.1 |
+| Auth email / Google OAuth | §3.1 | ✅ Implémenté |
+| Profil athlète persistant | §3.3 | ✅ Implémenté |
+| Catégories d'âge (Junior→Master 3) | §4.2 | ✅ Implémenté |
+| coeff_age + coeff_sexe | §5.4 §5.5 | ✅ Implémenté |
+| scorePlateforme | §5.2 | ✅ Implémenté |
+| Historique performances | §4.1 | ✅ Implémenté |
+| Classement en ligne filtrable | §5.6 | ✅ Implémenté |
 
 #### Phase 2.2 — Compétition Connectée 📋
 
