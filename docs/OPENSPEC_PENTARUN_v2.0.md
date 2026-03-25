@@ -423,5 +423,25 @@ Tous les errata des versions précédentes restent en vigueur :
 
 ---
 
+## §11 — Errata v2.0
+
+### §11.1 — ERRATA v2.0 — Thème A2UI (texte noir sur fond noir)
+
+**Problème** : `ThemeData(textTheme: TextTheme(...))` avec seulement 3 styles explicites laissait tous les autres variants (`titleSmall`, `headlineSmall`, `displaySmall`, etc.) hériter de `Colors.black` (couleur par défaut du système). Résultat : texte invisible sur fond sombre dans le bilan métabolique et d'autres widgets sans couleur explicite.
+
+**Correction** : `a2ui_theme.dart` utilise désormais `ThemeData.dark().textTheme.apply(bodyColor: blanc, displayColor: blanc)` comme base, garantissant que **tous** les variants de texte héritent de `A2Colors.blanc` par défaut.
+
+**Règle** : Toute future modification du `textTheme` doit partir de `ThemeData.dark().textTheme` et ne pas remplacer le `TextTheme` entier.
+
+### §11.2 — ERRATA v2.0 — Spinner invisible état loading
+
+**Problème** : `ElevatedButton(onPressed: null)` (état désactivé pendant un chargement) perd sa couleur `backgroundColor` définie dans le thème et bascule sur `colorScheme.onSurface.withOpacity(0.12)` (gris très sombre). Le `CircularProgressIndicator(color: Colors.black)` à l'intérieur devenait alors invisible sur fond sombre.
+
+**Correction** : En état loading, le bouton force explicitement `backgroundColor: A2Colors.cyanDark` et le spinner utilise `color: A2Colors.blanc`. Applicable à `auth_screen.dart` et `profile_screen.dart`.
+
+**Règle** : Tout bouton avec spinner de chargement doit maintenir une couleur de fond explicite et utiliser `color: A2Colors.blanc` pour le `CircularProgressIndicator`.
+
+---
+
 *OPENSPEC PENTARUN v2.0 · KAFORGE · Kinetic Axiom*
 *Conforme SPEC-KIT v1.0 · A2UI v1.3*
