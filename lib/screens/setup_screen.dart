@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/models/energy_breakdown.dart';
+import 'package:pentarun_flutter/screens/profile_screen.dart';
+import 'package:pentarun_flutter/services/profile_service.dart';
 import 'package:pentarun_flutter/state/app_state.dart';
 import 'package:pentarun_flutter/theme/a2ui_colors.dart';
 import 'package:pentarun_flutter/widgets/athlete_form.dart';
@@ -130,6 +132,14 @@ class _EnergyPredictorCard extends StatelessWidget {
 class SetupScreen extends StatelessWidget {
   const SetupScreen({super.key});
 
+  Future<void> _openProfile(BuildContext context) async {
+    final profile = await ProfileService.getCurrentProfile();
+    if (!context.mounted) return;
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => ProfileScreen(existing: profile)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = AppStateProvider.of(context);
@@ -150,11 +160,11 @@ class SetupScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Row(
+                  Row(
                     children: [
-                      Icon(Icons.monitor_heart, color: A2Colors.cyan, size: 24),
-                      SizedBox(width: 12),
-                      Text(
+                      const Icon(Icons.monitor_heart, color: A2Colors.cyan, size: 24),
+                      const SizedBox(width: 12),
+                      const Text(
                         'CONFIGURATION VAGUE',
                         style: TextStyle(
                           fontWeight: FontWeight.w900,
@@ -162,6 +172,12 @@ class SetupScreen extends StatelessWidget {
                           fontSize: 19,
                           color: A2Colors.blanc,
                         ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.account_circle_outlined, color: A2Colors.gris1),
+                        tooltip: 'Mon profil',
+                        onPressed: () => _openProfile(context),
                       ),
                     ],
                   ),
