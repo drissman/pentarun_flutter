@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/models/energy_breakdown.dart';
+import 'package:pentarun_flutter/screens/competition_list_screen.dart';
 import 'package:pentarun_flutter/screens/profile_screen.dart';
 import 'package:pentarun_flutter/services/profile_service.dart';
 import 'package:pentarun_flutter/state/app_state.dart';
@@ -140,6 +141,12 @@ class SetupScreen extends StatelessWidget {
     );
   }
 
+  void _openCompetitions(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const CompetitionListScreen()),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final state = AppStateProvider.of(context);
@@ -174,6 +181,11 @@ class SetupScreen extends StatelessWidget {
                         ),
                       ),
                       const Spacer(),
+                      IconButton(
+                        icon: const Icon(Icons.emoji_events_outlined, color: A2Colors.gris1),
+                        tooltip: 'Mes compétitions',
+                        onPressed: () => _openCompetitions(context),
+                      ),
                       IconButton(
                         icon: const Icon(Icons.account_circle_outlined, color: A2Colors.gris1),
                         tooltip: 'Mon profil',
