@@ -1,7 +1,8 @@
 # SPEC-KIT — Guide de Conformité et Validation KAFORGE
 
 > **Kinetic Axiom / KAFORGE** · Version : 1.0
-> Dernière mise à jour : 25 Mars 2026
+> Dernière mise à jour : 26 Mars 2026
+> **Phase actuelle : 3.5 livrée — Phase 4 planifiée**
 
 ---
 
@@ -54,7 +55,7 @@ Le SPEC-KIT inclut un mécanisme d'élagage explicite : toute fonctionnalité d�
 3. Les features élagées sont candidates à une phase ultérieure de la Roadmap
 
 **Exemple PENTARUN :**
-> "Les calculs VMA et Vitesse Critique sont élagués du module chrono pour préserver la légèreté A2UI. Réservés au Module Coaching Solaris (Phase 4)."
+> "Les calculs VMA et Vitesse Critique sont élagués du module chrono pour préserver la légèreté A2UI. Réservés au Module Coaching Solaris (Phase 5)."
 
 ---
 
@@ -62,7 +63,7 @@ Le SPEC-KIT inclut un mécanisme d'élagage explicite : toute fonctionnalité d�
 
 Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a un périmètre fermé — on ne commence pas la Phase N+1 tant que la Phase N n'est pas en statut `✅`.
 
-### Phase actuelle : 2.2
+---
 
 #### Phase 1.3 — Dashboard UX ✅
 
@@ -175,40 +176,110 @@ Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a u
 | Replay automatique (`offlineFlush`) au prochain push réussi | §7.3 | ✅ Implémenté v2.2 |
 | Bouton copier lien spectateurs (icône link CompetitionDetailScreen) | §7.2 | ✅ Implémenté v2.2 |
 
-#### Phase 2.3 — Classements & Communauté 📋
+#### Phase 2.3 — Classements & Communauté ✅
 
-| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+**Sprint 1 — Podium**
+
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
 |---|---|---|
-| Ranking général segmenté | §5.6 | 📋 Phase 2.3 |
-| Records plateforme par catégorie | §5.6 | 📋 Phase 2.3 |
-| Progression individuelle | §5.6 | 📋 Phase 2.3 |
-| Export PDF fiche résultat | §9.4 Élagage | 📋 Phase 2.3 |
+| `RankingScreen` — onglet CLASSEMENT + podium 🥇🥈🥉 | §5.6 | ✅ Implémenté v2.3 |
+| `_PodiumWidget` / `_PodiumCard` — ordre visuel 2-1-3 | §5.6 | ✅ Implémenté v2.3 |
+| Filtre par niveau (TabController) | §5.6 | ✅ Implémenté v2.3 |
 
-#### Phase 3.5 — CV Assist : Comptage Automatique des Répétitions 📋
+**Sprint 2 — Records**
 
-| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
 |---|---|---|
-| Intégration google_mlkit_pose_detection | §3.5 | 📋 Phase 3.5 |
-| Accès caméra Flutter (camera package) | §3.5 | 📋 Phase 3.5 |
-| Extraction landmarks + angles articulaires | §3.5.2 | 📋 Phase 3.5 |
-| Machine à états angulaire (snatch/jerk/long cycle) | §3.5.3 | 📋 Phase 3.5 |
-| Overlay UI RacingScreen + compteur CV | §3.5.4 | 📋 Phase 3.5 |
-| Feature flag cv_rep_counting (profiles.features[]) | §3.5.5 | 📋 Phase 3.5 |
-| Calibration terrain (seuils par niveau) | §3.5.6 | 📋 Phase 3.5 |
+| Vue PostgreSQL `records` (`DISTINCT ON` + `ORDER BY platform_score`) | §5.6 | ✅ Migration 003 |
+| Onglet RECORDS — grille `AgeCategory × Sex` | §5.6 | ✅ Implémenté v2.3 |
+| `_RecordCell` — meilleur score + nom + date | §5.6 | ✅ Implémenté v2.3 |
+| `ResultsService.getRecords({level})` | §5.6 | ✅ Implémenté v2.3 |
 
-#### Phase 3 — HR & Coefficients Dynamiques 📋
+**Sprint 3 — Progression individuelle**
 
-| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
 |---|---|---|
-| Intégration BLE GATT 0x180D | §6.2 | 📋 Phase 3 |
-| Capture FC temps réel | §6.3 | 📋 Phase 3 |
-| Calcul TRIMP (Bannister 1991) | §6.4 | 📋 Phase 3 |
-| coeff_physio dynamique | §6.5 | 📋 Phase 3 |
-| scorePlateforme_HR | §6.6 | 📋 Phase 3 |
+| `_ProgressionChart` CustomPaint dans `HistoryScreen` | §5.6 | ✅ Implémenté v2.3 |
+| Axe Y inversé (score bas = position haute = meilleur) | §5.6 | ✅ Implémenté v2.3 |
+| Point PB en ambre avec label "PB" | §5.6 | ✅ Implémenté v2.3 |
+
+**Sprint 4 — Export PDF**
+
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
+|---|---|---|
+| `PdfExportService.exportResult(RaceResult)` (`pdf ^3.12.0`) | §9.4 → livré | ✅ Implémenté v2.3 |
+| `pdf_download_web.dart` — dart:html Blob URL download | §9.4 → livré | ✅ Implémenté v2.3 |
+| Bouton PDF sur chaque fiche dans `HistoryScreen` | §9.4 → livré | ✅ Implémenté v2.3 |
+| Badge HR dans `HistoryScreen` (`fcMoy`, `scoreHR`) | §6.6 | ✅ Implémenté v2.3 |
+
+#### Phase 3 — HR & Coefficients Dynamiques ✅
+
+**Sprint 1 — BLE Infrastructure**
+
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
+|---|---|---|
+| `HrSample`, `HrDevice` — modèles BLE | §6.2 §6.3 | ✅ Implémenté v3.0 |
+| `BleService` stub/native (`dart.library.io`) | §6.2 | ✅ Implémenté v3.0 |
+| `HrSessionService` singleton — buffer + computeMetrics() | §6.3 | ✅ Implémenté v3.0 |
+| `_HrPairingCard` dans SetupScreen (scan, connect, disconnect) | §6.2 | ✅ Implémenté v3.0 |
+| Badge "WEB — NON DISPO" sur Flutter Web | §6.2 | ✅ Implémenté v3.0 |
+
+**Sprint 2 — Moteur TRIMP**
+
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
+|---|---|---|
+| `HrCalculator.compute()` — TRIMP Bannister 1991 | §6.4 | ✅ Implémenté v3.0 |
+| `HrCalculator.fcMaxTheorique()` — Tanaka 2001 (if/else chain) | §6.4 | ✅ Implémenté v3.0 |
+| `HrCalculator.platformScoreHr()` | §6.5 §6.6 | ✅ Implémenté v3.0 |
+| Migration 004 — colonnes HR sur `results` + index | §6.3 | ✅ Migration 004 |
+
+**Sprint 3 — coeff_physio + Data model + UI**
+
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
+|---|---|---|
+| `HrMetrics` — modèle post-course complet | §6.3 | ✅ Implémenté v3.0 |
+| `Athlete.hrMetrics` nullable | §6.3 | ✅ Implémenté v3.0 |
+| `RaceResult` — 5 champs HR nullable (fromJson/toJson) | §6.3 §6.5 §6.6 | ✅ Implémenté v3.0 |
+| `sealAthlete` enrichit `RaceResult` avec HR via `HrSessionService` | §6.6 | ✅ Implémenté v3.0 |
+| Section HR dans `AthleteResultCard` (`_hrSection`) | §6.6 | ✅ Implémenté v3.0 |
+
+#### Phase 3.5 — CV Assist : Comptage Automatique des Répétitions ✅
+
+**Sprint 1 — Modèles & Config**
+
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
+|---|---|---|
+| `PoseLandmark`, `RepEvent`, `RepState`, `RepSide` | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| Indices landmarks statiques (shoulder/elbow/wrist L+R) | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `KbMovement` enum (snatch, jerk, longCycle) | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `RepCounterConfig.forMovement(movement, level)` | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+
+**Sprint 2 — Engine + Services**
+
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
+|---|---|---|
+| `RepCounterEngine.angleDegrees(a, b, c)` — produit scalaire | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `RepCounterEngine.processFrame({landmarks, side})` — machine à états | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `RepCounterEngine.processFrameBothSides(landmarks)` | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `CvService` stub/native (`dart.library.io`) | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `CvRepSession` singleton — stationReps + totalReps + repStream | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+
+**Sprint 3 — Feature Flag + Overlay UI**
+
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
+|---|---|---|
+| Migration 005 — `features TEXT[]` sur profiles + `cv_rep_count` sur results | §8 Phase 3.5 | ✅ Migration 005 |
+| `AthleteProfile.features` + `hasCvFeature` getter | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `Athlete.cvStationReps`, `cvTotalReps` nullable | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `RaceResult.cvRepCount` nullable | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `AppState.cvEnabled` + `toggleCv()` + `updateCvRep(athleteId)` | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `validateStation` — reset cvStationReps + accumulation cvTotalReps | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `_CvBadge` overlay — alerte ambre si `|cvReps − expectedReps| > 2` | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| Couleur `withValues(alpha:)` — fix deprecation Flutter 3.x (§11.8) | §11.8 ERRATA | ✅ Corrigé v3.5 |
 
 #### Phase 4+ — Infrastructure & Coaching 📋
 
-| Fonctionnalité | Référence OPENSPEC v2.0 | Statut |
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
 |---|---|---|
 | Migration VPS auto-hébergé | §2.2 | 📋 Phase 4 |
 | Module Coaching Solaris (VMA, VO2) | §9.4 Élagage | 📋 Phase 5 |
@@ -221,7 +292,8 @@ Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a u
 ```
 screens/     → [phase]_screen.dart  (setup, racing, summary)
 widgets/     → [entity]_[type].dart  (athlete_race_card, station_progress_bar)
-engine/      → [function]_[type].dart (energy_calculator)
+engine/      → [function]_[type].dart (energy_calculator, rep_counter_engine)
+services/    → [feature]_service[_stub|_native].dart  (ble_service_stub, cv_service_native)
 theme/       → a2ui_[category].dart
 ```
 
@@ -237,6 +309,9 @@ final double hOh = h * 1.15;
 
 // SPEC-KIT §6 — Fat Finger : ≥ 9rem (144px)
 height: 144,
+
+// SPEC-KIT §3.5.4 — Phase 3.5 : badge CV Assist si feature activée
+if (state.cvEnabled && athlete.cvStationReps != null) ...
 ```
 
 ### 5.3 Couleurs — jamais de valeur hex en dur
@@ -244,9 +319,11 @@ Toutes les couleurs passent par `A2Colors` (tokens SPEC-KIT) :
 ```dart
 // CORRECT
 color: A2Colors.cyan
+color: A2Colors.ambre.withValues(alpha: 0.4)
 
 // INTERDIT
 color: const Color(0xFF06B6D4) // hors fichier a2ui_colors.dart
+color: A2Colors.vert.withOpacity(0.5) // deprecated Flutter 3.x → §11.8
 ```
 
 ### 5.4 Gestion des phases
@@ -254,6 +331,21 @@ La machine à états `AppPhase` est le reflet direct du §4 OPENSPEC :
 ```dart
 enum AppPhase { setup, racing, summary }
 // §4.1 → setup | §4.2 → racing | §4.3 → summary
+```
+
+### 5.5 Pattern stub/native (BLE + CV)
+Toute feature native-only doit utiliser le pattern d'import conditionnel :
+```dart
+// [feature].dart — sélecteur
+export '[feature]_stub.dart'
+    if (dart.library.io) '[feature]_native.dart';
+
+// [feature]_stub.dart — no-op Flutter Web
+class FeatureImpl { bool get isSupported => false; ... }
+
+// [feature]_native.dart — implémentation commentée, prête à activer
+// TODO: décommenter + ajouter package au pubspec
+class FeatureImpl { ... }
 ```
 
 ---
@@ -266,7 +358,7 @@ Avant tout merge / release, valider :
 - [ ] Aucun `❌` non justifié dans la matrice
 - [ ] Errata documenté si formule ou comportement modifié
 - [ ] Commentaires `// OPENSPEC §X.Y` présents sur toutes les règles métier
-- [ ] Couleurs via `A2Colors` uniquement
+- [ ] Couleurs via `A2Colors` uniquement — `withValues(alpha:)` et non `withOpacity`
 - [ ] Pas de `print()` ou code de debug en production
 - [ ] Version `pubspec.yaml` synchronisée avec la version OPENSPEC
 
@@ -293,7 +385,10 @@ Avant tout merge / release, valider :
 | `await WaveService.pushProgress()` dans validateStation | Bloque le chrono si réseau lent → toujours fire-and-forget + catchError → §7.3 |
 | Jointure `profiles!inner(...)` pour accès spectateur | Nécessite auth → utiliser display_name dénormalisé + anon SELECT → §7.2 |
 | Politiques RLS manquantes pour `anon` | Spectateur voit "permission denied" → ajouter policies TO anon sur competitions/waves/wave_athletes → §7.2 |
+| `color.withOpacity(x)` dans tout nouveau code | Deprecated Flutter 3.x — pertes de précision colorimétrique → utiliser `color.withValues(alpha: x)` → §11.8 ERRATA |
+| Feature native-only sans pattern stub/native | BLE et CV ne compilent pas sur Flutter Web → toujours stub + conditional export dart.library.io |
+| `const Map<double, double>` avec clés double | Dart interdit les const map avec clés double (équality non primitive) → utiliser if/else chain → cf. HrCalculator |
 
 ---
 
-*SPEC-KIT v1.0 · KAFORGE · Kinetic Axiom — Phase 2.2 complète*
+*SPEC-KIT v1.0 · KAFORGE · Kinetic Axiom — Phase 3.5 livrée*

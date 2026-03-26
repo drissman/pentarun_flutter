@@ -1,9 +1,9 @@
 # OPENSPEC PENTARUN — v2.0
 
 > **Kinetic Axiom / KAFORGE**
-> Version : 2.2 — Compétition Connectée Complète
-> Précédente version : 2.1 (identité & profils)
-> Date : 25 Mars 2026
+> Version : 3.5 — CV Assist + HR Dynamique + Classements
+> Précédente version : 2.2 (Compétition Connectée Complète)
+> Date : 26 Mars 2026
 > Frameworks : OPENSPEC · SPEC-KIT v1.0 · A2UI v1.3
 
 ---
@@ -29,6 +29,7 @@ PENTARUN v2.0 devient une **plateforme de compétition connectée** :
 - Historique individuel des performances
 - Classement général segmenté par profil
 - Intégration cardiofréquencemètre (BLE) pour métriques physiologiques réelles
+- Comptage automatique des répétitions par computer vision (CV Assist)
 
 ### §1.3 — Principe directeur
 > L'athlète est propriétaire de son identité. Il crée son compte avant la compétition. L'organisateur l'invite. Le juge le chronomètre. La plateforme se souvient.
@@ -79,10 +80,10 @@ PENTARUN v2.0 devient une **plateforme de compétition connectée** :
 
 | Phase | Infrastructure | Données |
 |---|---|---|
-| **2.1 → 2.3** | Supabase Cloud (supabase.com) | Hébergées Supabase |
-| **3+** | Migration optionnelle VPS auto-hébergé | Souveraineté KAFORGE |
+| **2.1 → 3.5** | Supabase Cloud (supabase.com) | Hébergées Supabase |
+| **4+** | Migration optionnelle VPS auto-hébergé | Souveraineté KAFORGE |
 
-**Migration Phase 2 → Phase 3 :** un seul changement dans le code Flutter (URL + anon key). Export/import PostgreSQL standard (`pg_dump` / `pg_restore`).
+**Migration Phase 3.5 → Phase 4 :** un seul changement dans le code Flutter (URL + anon key). Export/import PostgreSQL standard (`pg_dump` / `pg_restore`).
 
 ---
 
@@ -94,7 +95,7 @@ PENTARUN v2.0 devient une **plateforme de compétition connectée** :
 |---|---|---|
 | Email / Mot de passe | ✅ Natif | Phase 2.1 |
 | Google OAuth (Gmail) | ✅ Natif | Phase 2.1 |
-| SSO (SAML/OpenID) | ✅ Natif | Phase 3 |
+| SSO (SAML/OpenID) | ✅ Natif | Phase 4 |
 
 ### §3.2 — Rôles plateforme
 
@@ -143,10 +144,11 @@ results (tous les résultats supprimés)
 ### §4.1 — Entités principales
 
 ```
-athletes
+profiles
   id, auth_id (Supabase Auth), nom, prenom
   sexe, date_naissance, poids_kg, taille_cm
   niveau_habituel, kb_habituel_kg
+  features TEXT[] DEFAULT '{}'        -- feature flags (ex: 'cv_rep_counting')
   created_at
 
 competitions
@@ -162,18 +164,28 @@ wave_athletes
   id, wave_id, athlete_id
   level, weight_kb_kg, coeff_kb
   categorie_age, coeff_age, coeff_sexe
+  display_name (dénormalisé)
 
 results
   id, wave_athlete_id
   final_time_ms, official_score, platform_score
-  splits (JSON array de timestamps)
+  splits (JSON array de timestamps en ms)
   no_count_events, energy_breakdown (JSON)
-  hr_data (JSON, nullable) — cf. §6
+  -- Phase 3 : métriques cardiaques (nullable)
+  fc_moy INTEGER                       -- FC moyenne course (bpm)
+  fc_max_atteinte INTEGER              -- FC maximale atteinte
+  trimp NUMERIC(8,2)                   -- TRIMP Bannister 1991
+  coeff_physio NUMERIC(6,4)            -- (FC_moy/FC_max_theo) × coeff_age
+  platform_score_hr NUMERIC(15,3)      -- score avec coeff_physio
+  hr_data JSONB                        -- buffer brut BLE (nullable)
+  -- Phase 3.5 : CV Assist (nullable)
+  cv_rep_count INTEGER                 -- reps détectées par CV sur la course
   sealed_at, judge_signature, athlete_signature
 
-rankings
-  Vue PostgreSQL calculée automatiquement
-  depuis results + wave_athletes
+records  (vue PostgreSQL)
+  DISTINCT ON (level, coeff_sexe, coeff_age)
+  ORDER BY platform_score ASC
+  → meilleur platform_score par catégorie
 ```
 
 ### §4.2 — Catégories d'âge
@@ -256,8 +268,8 @@ PENTARUN = événement mixte (~70% force KB + ~30% aérobie).
 |---|---|
 | **Classement général** | Par niveau + catégorie âge + sexe |
 | **Classement OPEN** | Par niveau + sexe (toutes tranches d'âge) |
-| **Record plateforme** | Meilleur score absolu par niveau/sexe/âge |
-| **Progression individuelle** | Évolution du scorePlateforme dans le temps |
+| **Record plateforme** | Meilleur score absolu par niveau/sexe/âge (vue `records`) |
+| **Progression individuelle** | Évolution du scorePlateforme dans le temps (graphique CustomPaint) |
 
 ---
 
@@ -275,8 +287,8 @@ L'intégration HR est **optionnelle** pour l'athlète. En son absence, les coeff
 | Service GATT | Heart Rate Service — UUID `0x180D` |
 | Caractéristique | Heart Rate Measurement — UUID `0x2A37` |
 | Compatibilité | Polar H10, Garmin HRM, ceintures BLE standard |
-| Package Flutter | `flutter_blue_plus` |
-| Connexion | Optionnelle, initiée par l'athlète avant le départ |
+| Package Flutter | `flutter_blue_plus` (natif Android/iOS — stub no-op sur Web) |
+| Connexion | Optionnelle, initiée par l'athlète avant le départ via SetupScreen |
 
 ### §6.3 — Métriques capturées
 
@@ -381,7 +393,7 @@ Gymnases = wifi instable. Architecture :
 
 ## §8 — Roadmap Phasée v2.x
 
-### Phase 2.1 — Identité & Profils
+### Phase 2.1 — Identité & Profils ✅
 - Intégration Supabase Auth (email + Google OAuth)
 - Création profil athlète (nom, sexe, âge, poids, taille, niveau, KB)
 - Historique personnel des performances
@@ -395,20 +407,18 @@ Gymnases = wifi instable. Architecture :
 - **Sprint 4** : `DirectorScreen` — tableau de bord temps réel multi-vagues, chronos live, classements provisoires, barre progression stations
 - **Sprint 5** : `SpectatorScreen` (URL publique `/#/live/{id}`) + `OfflineQueue` (localStorage outbox pour pushProgress sur wifi instable)
 
-### Phase 2.3 — Classements & Communauté
-- `scorePlateforme` calculé sur tous les résultats
-- Ranking général segmenté (niveau + âge + sexe)
-- Records plateforme par catégorie
-- Progression individuelle dans le temps
+### Phase 2.3 — Classements & Communauté ✅
+- **Sprint 1** : `RankingScreen` — podium top-3 visuel 🥇🥈🥉, onglet CLASSEMENT
+- **Sprint 2** : Onglet RECORDS — grille `AgeCategory × Sex`, meilleur `platform_score` par catégorie via vue PostgreSQL `records` (`DISTINCT ON` + `ORDER BY platform_score ASC`)
+- **Sprint 3** : `HistoryScreen` — `_ProgressionChart` CustomPaint, axe Y inversé (score bas = haut = mieux), PB en ambre
+- **Sprint 4** : Export PDF fiche résultat (`pdf ^3.12.0`, téléchargement dart:html Blob URL)
 
-### Phase 3 — HR & Coefficients Dynamiques
-- Intégration BLE `flutter_blue_plus`
-- Capture FC temps réel pendant la course
-- Calcul TRIMP post-course
-- `coeff_physio` dynamique
-- `scorePlateforme_HR` en complément du score statique
+### Phase 3 — HR & Coefficients Dynamiques ✅
+- **Sprint 1** : BLE infrastructure — `BleService` stub/native, `HrSessionService`, `HrSample`, `HrDevice`, `_HrPairingCard` dans SetupScreen
+- **Sprint 2** : Moteur TRIMP — `HrCalculator.compute()`, formule Bannister 1991, FC max théo Tanaka 2001, migration `004_hr_data.sql`
+- **Sprint 3** : `coeff_physio` dynamique, `scorePlateforme_HR`, section HR dans `AthleteResultCard`, champs HR dans `RaceResult`
 
-### Phase 3.5 — CV Assist : Comptage Automatique des Répétitions
+### Phase 3.5 — CV Assist : Comptage Automatique des Répétitions ✅
 
 > **Jalon stratégique — Feature Gold (compte root/premium)**
 
@@ -423,33 +433,27 @@ Assister le juge en comptant automatiquement les répétitions KB via computer v
 - Framework : `google_mlkit_pose_detection` (Flutter, Android + iOS)
 - Latence : < 20ms — compatible avec 30fps en temps réel
 
-**Pourquoi on-device et pas cloud API :**
-- Wifi gymnase instable → cloud API = blackout total. On-device = 0 dépendance réseau
-- Latence cloud (200-500ms) incompatible avec comptage temps réel (besoin 30fps)
-- Coût cloud : facturation par frame → prohibitif à l'usage
-- Vie privée : la vidéo ne quitte jamais le device
-- APIs cloud génériques (Google Cloud Vision, OpenAI Vision) ne font pas de pose estimation temporelle
-
 **Contrainte plateforme :**
 `google_mlkit_pose_detection` fonctionne sur Android et iOS uniquement.
 Flutter Web = non supporté pour le ML temps réel.
-→ Cette feature nécessite la compilation de l'app en natif (APK Android / IPA iOS).
+→ Implémenté via pattern stub/native (`dart.library.io`) — Web reçoit un badge informatif, natif reçoit l'implémentation complète (commentée, prête à activer).
 
-#### Algorithme de détection de répétition
+#### Algorithme de détection de répétition (implémenté)
 
 ```
 Caméra (30fps) → MediaPipe Pose → Landmarks articulaires
 → Angle épaule-coude-poignet (bras droit + gauche)
-→ Machine à états angulaire :
+  angleDeg = acos(dot(v1, v2) / (|v1| × |v2|)) × 180/π
+→ Machine à états angulaire avec debounce :
     BASSE  : angle < seuil_bas  (ex: 60°)
     HAUTE  : angle > seuil_haut (ex: 150°)
-    Transition BASSE→HAUTE→BASSE = +1 répétition
+    Transition BASSE→HAUTE confirmée → HAUTE→BASSE = +1 répétition
 → Score de confiance par rep (qualité du mouvement)
-→ Affichage compteur live + indication au juge
+→ _CvBadge : alerte ambre si |cvReps − expectedReps| > 2
 ```
 
 Calibration par type de mouvement KB biathlon :
-- Snatch / Jerk / Long Cycle → profils angulaires distincts
+- Snatch / Jerk / Long Cycle → profils angulaires distincts via `RepCounterConfig`
 - Seuils configurables par niveau (amplitude différente DÉCOUVERTE vs TITAN)
 
 #### Feature Flag par compte
@@ -460,41 +464,23 @@ ALTER TABLE profiles ADD COLUMN features TEXT[] DEFAULT '{}';
 ```
 
 ```dart
-bool get hasCVFeature => profile.features.contains('cv_rep_counting');
+bool get hasCvFeature => features.contains('cv_rep_counting');
 ```
 
-Activation par l'admin via le dashboard Supabase (UPDATE profiles SET features = ...).
+Activation par l'admin via le dashboard Supabase (`UPDATE profiles SET features = ...`).
 
 #### Intégration dans RacingScreen
 
-- Overlay caméra semi-transparent sur `AthleteRaceCard`
-- Compteur CV affiché à côté du compteur manuel juge
-- Si écart CV vs juge > 2 reps → alerte visuelle (orange) → juge arbitre
-- Bouton "CV OFF" pour désactiver à tout moment
-- Le bouton NO COUNT reste le seul mécanisme officiel d'invalidation
+- `_CvBadge` sur `AthleteRaceCard` : compteur CV vs attendu, alerte ambre si écart > 2 reps
+- `CvRepSession` singleton : accumule `stationReps` (reset au VALIDER) + `totalReps`
+- `AppState.updateCvRep(athleteId)` mis à jour à chaque RepEvent depuis le stream
+- `validateStation` : accumule `cvTotalReps += stationReps`, reset `cvStationReps` via `copyWith(resetCvStation: true)`
 
 #### Ce que la CV ne fait PAS
 - Ne valide pas automatiquement les stations (le juge appuie toujours sur VALIDER)
 - Ne remplace pas le bouton NO COUNT (le juge juge)
 - Ne transmet pas de vidéo à un serveur externe
 - Ne fonctionne pas si le device n'a pas de caméra frontale/arrière accessible
-
-#### Packages Flutter nécessaires (Phase 3.5)
-```yaml
-google_mlkit_pose_detection: ^0.12.0   # Android + iOS
-camera: ^0.11.0                         # Accès caméra Flutter
-```
-
-#### Roadmap Phase 3.5
-
-| Étape | Description |
-|---|---|
-| 3.5.1 | Intégration `google_mlkit_pose_detection` + accès caméra |
-| 3.5.2 | Extraction landmarks + calcul angles articulaires |
-| 3.5.3 | Algorithme machine à états angulaire (calibration snatch/jerk) |
-| 3.5.4 | UI overlay RacingScreen + compteur CV |
-| 3.5.5 | Feature flag `cv_rep_counting` + activation par compte |
-| 3.5.6 | Tests terrain (gymnase) + calibration seuils par niveau |
 
 ### Phase 4 — Infrastructure Souveraine
 - Migration Supabase Cloud → VPS auto-hébergé
@@ -540,23 +526,59 @@ camera: ^0.11.0                         # Accès caméra Flutter
 | RLS anon SELECT spectateurs | §7.2 §7.3 | ✅ Migration 002 |
 | display_name dénormalisé wave_athletes | §7.2 | ✅ Migration 002 |
 
+### §9.2bis — Phase 2.3
+
+| Exigence | Référence | État |
+|---|---|---|
+| Podium top-3 visuel (🥇🥈🥉) — RankingScreen onglet CLASSEMENT | §5.6 | ✅ Implémenté Sprint 1 |
+| Vue records PostgreSQL (`DISTINCT ON` + `ORDER BY platform_score`) | §5.6 | ✅ Migration 003 |
+| Onglet RECORDS — grille AgeCategory × Sex | §5.6 | ✅ Implémenté Sprint 2 |
+| Graphique progression individuelle CustomPaint (PB en ambre) | §5.6 | ✅ Implémenté Sprint 3 |
+| Export PDF fiche résultat (`pdf ^3.12.0`) | §9.4 → livré | ✅ Implémenté Sprint 4 |
+| Téléchargement PDF dart:html Blob URL (stub/web) | §9.4 → livré | ✅ Implémenté Sprint 4 |
+| Badge HR sur carte résultat (`fcMoy`, `scoreHR`) | §6.6 | ✅ Implémenté Sprint 4 |
+
 ### §9.3 — Phase 3
 
 | Exigence | Référence | État |
 |---|---|---|
-| BLE GATT 0x180D | §6.2 | 📋 Phase 3 |
-| Métriques HR (fc_moy, fc_max, trimp) | §6.3 §6.4 | 📋 Phase 3 |
-| coeff_physio dynamique | §6.5 | 📋 Phase 3 |
-| scorePlateforme_HR | §6.6 | 📋 Phase 3 |
+| BLE GATT 0x180D — `BleService` stub/native | §6.2 | ✅ Implémenté Sprint 1 |
+| `HrSessionService` — buffer + computeMetrics() | §6.3 | ✅ Implémenté Sprint 1 |
+| `_HrPairingCard` dans SetupScreen | §6.2 | ✅ Implémenté Sprint 1 |
+| `HrCalculator.compute()` — TRIMP Bannister 1991 | §6.4 | ✅ Implémenté Sprint 2 |
+| FC max théorique Tanaka 2001 (if/else chain) | §6.4 | ✅ Implémenté Sprint 2 |
+| Migration 004 — colonnes fc_*, trimp, coeff_physio, platform_score_hr | §6.3 §6.5 | ✅ Migration 004 |
+| `coeff_physio` dynamique | §6.5 | ✅ Implémenté Sprint 3 |
+| `scorePlateforme_HR` | §6.6 | ✅ Implémenté Sprint 3 |
+| Section HR dans `AthleteResultCard` | §6.6 | ✅ Implémenté Sprint 3 |
+| Champs HR dans `RaceResult` (fromJson / toJson) | §6.3 | ✅ Implémenté Sprint 3 |
+| Champ `hrMetrics` dans `Athlete` | §6.3 | ✅ Implémenté Sprint 3 |
+
+### §9.3bis — Phase 3.5
+
+| Exigence | Référence | État |
+|---|---|---|
+| `PoseLandmark`, `RepEvent`, `RepState`, `RepSide` | §8 Phase 3.5 | ✅ Implémenté Sprint 1 |
+| `RepCounterConfig` — seuils par mouvement × niveau | §8 Phase 3.5 | ✅ Implémenté Sprint 1 |
+| `RepCounterEngine` — machine à états angulaire + debounce | §8 Phase 3.5 | ✅ Implémenté Sprint 2 |
+| Calcul angle par produit scalaire (shoulder/elbow/wrist) | §8 Phase 3.5 | ✅ Implémenté Sprint 2 |
+| `CvService` stub/native (dart.library.io) | §8 Phase 3.5 | ✅ Implémenté Sprint 2 |
+| `CvRepSession` singleton — stationReps + totalReps | §8 Phase 3.5 | ✅ Implémenté Sprint 2 |
+| `features TEXT[]` sur profiles + `hasCvFeature` getter | §8 Phase 3.5 | ✅ Migration 005 + Sprint 3 |
+| `cv_rep_count` sur results | §8 Phase 3.5 | ✅ Migration 005 |
+| `_CvBadge` overlay sur AthleteRaceCard — alerte ambre écart > 2 | §8 Phase 3.5 | ✅ Implémenté Sprint 3 |
+| `AppState.cvEnabled` + `toggleCv()` + `updateCvRep()` | §8 Phase 3.5 | ✅ Implémenté Sprint 3 |
+| Reset `cvStationReps` au VALIDER, accumulation `cvTotalReps` | §8 Phase 3.5 | ✅ Implémenté Sprint 3 |
 
 ### §9.4 — Élagage documenté
 
 | Feature | Justification | Réservé |
 |---|---|---|
 | VMA / Vitesse Critique | Complexité coaching — hors scope plateforme compétition | Phase 5 |
-| SSO SAML | Utile seulement pour fédérations sportives formelles | Phase 3 |
-| Export PDF | Dépendance librairie PDF non testée en WASM | Phase 2.3 |
+| SSO SAML | Utile seulement pour fédérations sportives formelles | Phase 4 |
 | ANT+ (capteurs Garmin pro) | Requiert hardware spécial non BLE standard | Phase 4+ |
+| Calibration terrain CV (seuils par niveau) | Nécessite données gymnase réelles — phase test terrain | Phase 3.5 v2 |
+| `google_mlkit_pose_detection` activé en production | Package non ajouté au pubspec — activation manuelle requise | Phase 3.5 v2 |
 
 ---
 
@@ -643,7 +665,15 @@ Ce code s'exécute avant la construction de `_AuthGate`, garantissant que la ses
 
 **Règle** : Lors de toute mise à jour de `supabase_flutter`, vérifier les renommages d'enum dans `realtime_client`. Le nom `PostgresChangeFilterType` est le nom stable depuis 2.7.x.
 
+### §11.8 — ERRATA v3.x — withOpacity deprecated (Flutter 3.x)
+
+**Problème** : `Color.withOpacity(double)` est marqué deprecated depuis Flutter 3.x au profit de `Color.withValues(alpha: double)` pour éviter les pertes de précision dans l'espace colorimétrique étendu.
+
+**Correction** : Remplacer tous les appels `color.withOpacity(x)` par `color.withValues(alpha: x)`.
+
+**Règle** : Utiliser exclusivement `withValues(alpha:)` pour les opacités dynamiques. `withOpacity` est interdit dans tout nouveau code PENTARUN.
+
 ---
 
-*OPENSPEC PENTARUN v2.2 · KAFORGE · Kinetic Axiom*
+*OPENSPEC PENTARUN v3.5 · KAFORGE · Kinetic Axiom*
 *Conforme SPEC-KIT v1.0 · A2UI v1.3*
