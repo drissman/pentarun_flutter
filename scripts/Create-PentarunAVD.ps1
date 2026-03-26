@@ -1,4 +1,4 @@
-# ============================================================================
+﻿# ============================================================================
 # Create-PentarunAVD.ps1
 # Crée un AVD Android 36 (tablette 10") avec la Logitech BRIO comme caméra
 # et lance l'émulateur prêt pour flutter run
