@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/models/athlete.dart';
+import 'package:pentarun_flutter/models/hr_metrics.dart';
 import 'package:pentarun_flutter/models/station.dart';
 import 'package:pentarun_flutter/state/app_state.dart';
 import 'package:pentarun_flutter/theme/a2ui_colors.dart';
@@ -94,6 +95,10 @@ class AthleteResultCard extends StatelessWidget {
           // Graphique splits par station
           if (finished && athlete.splits.length == Station.count)
             _splitChart(state.startTime ?? DateTime.now()),
+
+          // SPEC-KIT §6.3 — Phase 3 : métriques cardio si capteur BLE disponible
+          if (finished && athlete.hrMetrics != null)
+            _hrSection(athlete.hrMetrics!),
 
           // Signatures
           if (finished) _signaturesSection(context, state),
@@ -531,6 +536,70 @@ class AthleteResultCard extends StatelessWidget {
           fontFamily: mono ? 'monospace' : null,
         ),
       ),
+    );
+  }
+
+  // SPEC-KIT §6.3–6.6 — Phase 3 : section métriques cardio
+  Widget _hrSection(HrMetrics hr) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 0),
+      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 20),
+      decoration: BoxDecoration(
+        border: Border(top: BorderSide(color: A2Colors.rouge.withValues(alpha: 0.3))),
+        color: A2Colors.rouge.withValues(alpha: 0.04),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(children: [
+            Icon(Icons.favorite, color: A2Colors.rouge, size: 14),
+            SizedBox(width: 6),
+            Text('DONNÉES CARDIO',
+                style: TextStyle(color: A2Colors.rouge, fontWeight: FontWeight.w900,
+                    fontSize: 10, letterSpacing: 1.5)),
+          ]),
+          const SizedBox(height: 14),
+          Wrap(
+            spacing: 24,
+            runSpacing: 12,
+            children: [
+              _hrStat('FC MOY', '${hr.fcMoy} bpm', A2Colors.rouge),
+              _hrStat('FC MAX', '${hr.fcMaxAtteinte} bpm', A2Colors.rouge),
+              _hrStat('FC MAX THÉO', '${hr.fcMaxTheorique} bpm', A2Colors.gris1),
+              _hrStat('TRIMP', hr.trimp.toStringAsFixed(1), A2Colors.ambre),
+              _hrStat('coeff_physio', hr.coeffPhysio.toStringAsFixed(4), A2Colors.cyan),
+              if (hr.platformScoreHr != null)
+                _hrStat('SCORE HR',
+                    TimeFormatter.format(hr.platformScoreHr!.round()),
+                    A2Colors.vert),
+            ],
+          ),
+          if (hr.platformScoreHr != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'scorePlateforme_HR = ${TimeFormatter.format(hr.platformScoreHr!.round())} '
+              '(coeff_physio remplace coeff_age)',
+              style: const TextStyle(color: A2Colors.gris1, fontSize: 9,
+                  fontWeight: FontWeight.w700),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _hrStat(String label, String value, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label,
+            style: const TextStyle(color: A2Colors.gris1, fontSize: 9,
+                fontWeight: FontWeight.w900, letterSpacing: 1)),
+        const SizedBox(height: 2),
+        Text(value,
+            style: TextStyle(color: color, fontWeight: FontWeight.w900,
+                fontSize: 15, fontFamily: 'monospace')),
+      ],
     );
   }
 }

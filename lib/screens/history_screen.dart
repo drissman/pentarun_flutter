@@ -197,6 +197,26 @@ class _HistoryScreenState extends State<HistoryScreen> {
                   fontSize: 12,
                 ),
               ),
+              // SPEC-KIT §6.3 — Phase 3 : badge HR si données capteur disponibles
+              if (r.fcMoy != null && r.platformScoreHr != null) ...[
+                const SizedBox(height: 2),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.favorite, color: A2Colors.rouge, size: 10),
+                    const SizedBox(width: 3),
+                    Text(
+                      '${r.fcMoy} bpm · HR ${TimeFormatter.format(r.platformScoreHr!.round())}',
+                      style: const TextStyle(
+                        fontFamily: 'monospace',
+                        color: A2Colors.rouge,
+                        fontSize: 10,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
               const SizedBox(height: 6),
               // SPEC-KIT §9.4 — Sprint 4 : export PDF
               GestureDetector(

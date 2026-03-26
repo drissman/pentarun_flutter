@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/models/energy_breakdown.dart';
+import 'package:pentarun_flutter/models/hr_device.dart';
 import 'package:pentarun_flutter/screens/competition_list_screen.dart';
 import 'package:pentarun_flutter/screens/profile_screen.dart';
 import 'package:pentarun_flutter/screens/wave_join_screen.dart';
+import 'package:pentarun_flutter/services/hr_session_service.dart';
 import 'package:pentarun_flutter/services/profile_service.dart';
 import 'package:pentarun_flutter/state/app_state.dart';
 import 'package:pentarun_flutter/theme/a2ui_colors.dart';
@@ -262,6 +264,10 @@ class SetupScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 24),
 
+                  // SPEC-KIT §6.2 — Phase 3 : Appairage capteur HR
+                  const _HrPairingCard(),
+                  const SizedBox(height: 16),
+
                   // Rejoindre vague connectée
                   SizedBox(
                     width: double.infinity,
@@ -322,6 +328,190 @@ class SetupScreen extends StatelessWidget {
           ),
         ],
         ),
+      ),
+    );
+  }
+}
+
+// ─── Appairage Capteur HR — Phase 3 ──────────────────────────────────────────
+
+class _HrPairingCard extends StatefulWidget {
+  const _HrPairingCard();
+
+  @override
+  State<_HrPairingCard> createState() => _HrPairingCardState();
+}
+
+class _HrPairingCardState extends State<_HrPairingCard> {
+  final _hr = HrSessionService.instance;
+  List<HrDevice> _found = [];
+  bool _scanning = false;
+
+  Future<void> _scan() async {
+    if (!_hr.bleSupported) return;
+    setState(() { _scanning = true; _found = []; });
+    await for (final devices in _hr.scan(timeout: const Duration(seconds: 8))) {
+      if (mounted) setState(() => _found = devices);
+    }
+    if (mounted) setState(() => _scanning = false);
+  }
+
+  Future<void> _connect(HrDevice d) async {
+    await _hr.connect(d.id);
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _disconnect() async {
+    await _hr.disconnect();
+    if (mounted) setState(() {});
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final connected = _hr.connected;
+    final device = _hr.device;
+    final supported = _hr.bleSupported;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: A2Colors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: connected
+              ? A2Colors.vert.withValues(alpha: 0.5)
+              : supported
+                  ? A2Colors.border2
+                  : A2Colors.border,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(
+              Icons.monitor_heart_outlined,
+              color: connected ? A2Colors.vert : A2Colors.gris1,
+              size: 18,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              'CAPTEUR CARDIO BLE',
+              style: TextStyle(
+                color: connected ? A2Colors.vert : A2Colors.gris1,
+                fontWeight: FontWeight.w900,
+                fontSize: 10,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const Spacer(),
+            // Badge statut
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: (connected
+                        ? A2Colors.vert
+                        : supported
+                            ? A2Colors.ambre
+                            : A2Colors.border2)
+                    .withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(6),
+                border: Border.all(
+                  color: (connected
+                          ? A2Colors.vert
+                          : supported
+                              ? A2Colors.ambre
+                              : A2Colors.border2)
+                      .withValues(alpha: 0.4),
+                ),
+              ),
+              child: Text(
+                connected
+                    ? 'CONNECTÉ'
+                    : supported
+                        ? 'NATIF'
+                        : 'WEB — NON DISPO',
+                style: TextStyle(
+                  color: connected
+                      ? A2Colors.vert
+                      : supported
+                          ? A2Colors.ambre
+                          : A2Colors.border2,
+                  fontSize: 8,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
+              ),
+            ),
+          ]),
+          const SizedBox(height: 10),
+          if (!supported)
+            // Message Web
+            const Text(
+              'BLE disponible uniquement sur l\'app mobile native.\n'
+              'Compilez avec flutter build apk pour activer le capteur HR.',
+              style: TextStyle(color: A2Colors.gris1, fontSize: 10),
+            )
+          else if (connected && device != null) ...[
+            // Capteur connecté
+            Text(device.name,
+                style: const TextStyle(
+                    color: A2Colors.blanc, fontWeight: FontWeight.w900, fontSize: 12)),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: _disconnect,
+              child: const Text('DÉCONNECTER',
+                  style: TextStyle(color: A2Colors.rouge, fontSize: 10,
+                      fontWeight: FontWeight.w900, letterSpacing: 1)),
+            ),
+          ] else ...[
+            // Scan + liste
+            Row(children: [
+              Expanded(
+                child: _found.isEmpty
+                    ? Text(
+                        _scanning ? 'Recherche en cours...' : 'Aucun capteur trouvé.',
+                        style: const TextStyle(color: A2Colors.gris1, fontSize: 10))
+                    : Wrap(
+                        spacing: 8,
+                        children: _found.map((d) => GestureDetector(
+                          onTap: () => _connect(d),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: A2Colors.surface,
+                              borderRadius: BorderRadius.circular(6),
+                              border: Border.all(color: A2Colors.border2),
+                            ),
+                            child: Text(d.name,
+                                style: const TextStyle(
+                                    color: A2Colors.cyan, fontSize: 10,
+                                    fontWeight: FontWeight.w900)),
+                          ),
+                        )).toList(),
+                      ),
+              ),
+              const SizedBox(width: 12),
+              GestureDetector(
+                onTap: _scanning ? null : _scan,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: A2Colors.surface,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: A2Colors.border2),
+                  ),
+                  child: _scanning
+                      ? const SizedBox(
+                          width: 12, height: 12,
+                          child: CircularProgressIndicator(
+                              color: A2Colors.cyan, strokeWidth: 2))
+                      : const Icon(Icons.bluetooth_searching, color: A2Colors.cyan, size: 16),
+                ),
+              ),
+            ]),
+          ],
+        ],
       ),
     );
   }

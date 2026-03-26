@@ -1,4 +1,5 @@
 // SPEC-KIT §4.1 — Résultat de course persistant (Supabase)
+// Phase 3 : ajout des champs HR nullable (rétrocompatible)
 import 'package:pentarun_flutter/models/level.dart';
 
 class RaceResult {
@@ -23,6 +24,18 @@ class RaceResult {
   /// Nom affiché — peuplé uniquement lors d'une requête avec jointure profiles
   final String? athleteDisplayName;
 
+  // ─── Champs cardio — Phase 3 (nullable, non disponibles sans capteur BLE) ──
+  /// FC moyenne sur la durée de la course (bpm)
+  final int? fcMoy;
+  /// FC maximale atteinte (bpm)
+  final int? fcMaxAtteinte;
+  /// TRIMP Bannister 1991 (charge cardiaque totale)
+  final double? trimp;
+  /// coeff_physio = (FC_moy / FC_max_theo) × coeff_age — SPEC-KIT §6.5
+  final double? coeffPhysio;
+  /// scorePlateforme_HR = finalTimeMs × coeffKb × coeffPhysio × coeffSexe
+  final double? platformScoreHr;
+
   const RaceResult({
     this.id,
     required this.profileId,
@@ -42,6 +55,11 @@ class RaceResult {
     this.energySteelKcal,
     this.energyTotalKcal,
     this.athleteDisplayName,
+    this.fcMoy,
+    this.fcMaxAtteinte,
+    this.trimp,
+    this.coeffPhysio,
+    this.platformScoreHr,
   });
 
   factory RaceResult.fromJson(Map<String, dynamic> json) {
@@ -69,6 +87,11 @@ class RaceResult {
       energySteelKcal: (json['energy_steel_kcal'] as num?)?.toDouble(),
       energyTotalKcal: (json['energy_total_kcal'] as num?)?.toDouble(),
       athleteDisplayName: displayName,
+      fcMoy: json['fc_moy'] as int?,
+      fcMaxAtteinte: json['fc_max_atteinte'] as int?,
+      trimp: (json['trimp'] as num?)?.toDouble(),
+      coeffPhysio: (json['coeff_physio'] as num?)?.toDouble(),
+      platformScoreHr: (json['platform_score_hr'] as num?)?.toDouble(),
     );
   }
 
@@ -89,5 +112,10 @@ class RaceResult {
     if (energyRunKcal != null) 'energy_run_kcal': energyRunKcal,
     if (energySteelKcal != null) 'energy_steel_kcal': energySteelKcal,
     if (energyTotalKcal != null) 'energy_total_kcal': energyTotalKcal,
+    if (fcMoy != null) 'fc_moy': fcMoy,
+    if (fcMaxAtteinte != null) 'fc_max_atteinte': fcMaxAtteinte,
+    if (trimp != null) 'trimp': trimp,
+    if (coeffPhysio != null) 'coeff_physio': coeffPhysio,
+    if (platformScoreHr != null) 'platform_score_hr': platformScoreHr,
   };
 }

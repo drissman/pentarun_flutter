@@ -1,10 +1,13 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/engine/energy_calculator.dart';
+import 'package:pentarun_flutter/engine/hr_calculator.dart';
+import 'package:pentarun_flutter/services/hr_session_service.dart';
 import 'package:pentarun_flutter/services/offline_queue.dart';
 import 'package:pentarun_flutter/models/age_category.dart';
 import 'package:pentarun_flutter/models/athlete.dart';
 import 'package:pentarun_flutter/models/energy_breakdown.dart';
+import 'package:pentarun_flutter/models/hr_metrics.dart';
 import 'package:pentarun_flutter/models/kettlebell.dart';
 import 'package:pentarun_flutter/models/level.dart';
 import 'package:pentarun_flutter/models/race_result.dart';
@@ -282,6 +285,30 @@ class AppState extends ChangeNotifier {
   // SPEC-KIT §7.3 — Scellement + save Supabase fire-and-forget
   void sealAthlete(Athlete athlete) {
     showToast('Fiche scellée et transmise — ${athlete.name}.');
+
+    // SPEC-KIT §6.3 — Phase 3 : calcul HR si données disponibles
+    HrMetrics? hrMetrics;
+    if (athlete.coeffAge != null && athlete.coeffSexe != null) {
+      final rawMetrics = HrSessionService.instance.computeMetrics(
+        coeffAge: athlete.coeffAge!,
+        coeffSexe: athlete.coeffSexe!,
+      );
+      if (rawMetrics != null && athlete.finalTimeMs != null) {
+        final psHr = HrCalculator.platformScoreHr(
+          finalTimeMs: athlete.finalTimeMs!,
+          coeffKb: athlete.coeff,
+          coeffPhysio: rawMetrics.coeffPhysio,
+          coeffSexe: athlete.coeffSexe!,
+        );
+        hrMetrics = rawMetrics.withPlatformScoreHr(psHr);
+        // Mise à jour de l'athlète dans la liste pour SummaryScreen
+        _athletes = _athletes
+            .map((a) => a.id == athlete.id ? a.copyWith(hrMetrics: hrMetrics) : a)
+            .toList();
+        notifyListeners();
+      }
+    }
+
     // Sauvegarde uniquement si profil lié et résultat complet
     if (athlete.profileId != null &&
         athlete.finalTimeMs != null &&
@@ -307,6 +334,11 @@ class AppState extends ChangeNotifier {
         energyRunKcal: athlete.energy.run,
         energySteelKcal: athlete.energy.steel,
         energyTotalKcal: athlete.energy.total,
+        fcMoy: hrMetrics?.fcMoy,
+        fcMaxAtteinte: hrMetrics?.fcMaxAtteinte,
+        trimp: hrMetrics?.trimp,
+        coeffPhysio: hrMetrics?.coeffPhysio,
+        platformScoreHr: hrMetrics?.platformScoreHr,
       );
       // Fire-and-forget — SPEC-KIT §7.3
       ResultsService.saveResult(result);

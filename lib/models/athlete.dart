@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'package:pentarun_flutter/models/energy_breakdown.dart';
+import 'package:pentarun_flutter/models/hr_metrics.dart';
 import 'package:pentarun_flutter/models/level.dart';
 
 enum AthleteStatus { waiting, running, finished }
@@ -31,6 +32,9 @@ class Athlete {
   // SPEC-KIT §7.1 — Phase 2.2 : lien vers wave_athletes (null = mode libre)
   final String? waveAthleteId;
 
+  // SPEC-KIT §6.3 — Phase 3 : métriques cardiaques (null si pas de capteur BLE)
+  final HrMetrics? hrMetrics;
+
   const Athlete({
     required this.id,
     required this.name,
@@ -53,6 +57,7 @@ class Athlete {
     this.coeffSexe,
     this.platformScore,
     this.waveAthleteId,
+    this.hrMetrics,
   });
 
   Athlete copyWith({
@@ -65,6 +70,7 @@ class Athlete {
     int? noCountEvents,
     Uint8List? judgeSignature,
     Uint8List? athleteSignature,
+    HrMetrics? hrMetrics,
     bool clearFinalTime = false,
     bool clearOfficialScore = false,
   }) {
@@ -91,6 +97,7 @@ class Athlete {
       coeffAge: coeffAge,
       coeffSexe: coeffSexe,
       waveAthleteId: waveAthleteId,
+      hrMetrics: hrMetrics ?? this.hrMetrics,
     );
   }
 }
