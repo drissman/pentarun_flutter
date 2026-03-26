@@ -276,13 +276,28 @@ Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a u
 | `validateStation` — reset cvStationReps + accumulation cvTotalReps | §8 Phase 3.5 | ✅ Implémenté v3.5 |
 | `_CvBadge` overlay — alerte ambre si `|cvReps − expectedReps| > 2` | §8 Phase 3.5 | ✅ Implémenté v3.5 |
 | Couleur `withValues(alpha:)` — fix deprecation Flutter 3.x (§11.8) | §11.8 ERRATA | ✅ Corrigé v3.5 |
+| `flutter_blue_plus ^1.35.0` activé pubspec + permissions Android | §6.2 Natif | ✅ Activé natif |
+| `google_mlkit_pose_detection ^0.12.0` + `camera ^0.11.0` activés | §8 Phase 3.5 Natif | ✅ Activé natif |
+| AndroidManifest BLE (BLUETOOTH_SCAN/CONNECT) + CAMERA | §6.2 §3.5 | ✅ Activé natif |
+| APK Android release 95.9 MB | §6.2 §3.5 | ✅ Build validé |
 
-#### Phase 4+ — Infrastructure & Coaching 📋
+#### Phase 4 — Module Coaching Solaris 📋
 
 | Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
 |---|---|---|
-| Migration VPS auto-hébergé | §2.2 | 📋 Phase 4 |
-| Module Coaching Solaris (VMA, VO2) | §9.4 Élagage | 📋 Phase 5 |
+| Charge hebdomadaire TRIMP cumulé 7 jours | §8 Phase 4 | 📋 Phase 4 |
+| Périodisation cycles charge / récupération TRIMP | §8 Phase 4 | 📋 Phase 4 |
+| Recommandations volume / intensité / fréquence | §8 Phase 4 | 📋 Phase 4 |
+| VMA / Vitesse Critique (réintégrés depuis §9.4 Élagage) | §9.4 Élagage | 📋 Phase 4 |
+
+#### Phase 5 — Infrastructure Souveraine 📋
+
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
+|---|---|---|
+| Migration VPS auto-hébergé (Hetzner / Scaleway EU, RGPD) | §2.2 | 📋 Phase 5 |
+| PostgreSQL + pgBouncer + GoTrue + Realtime self-hosted | §2.2 | 📋 Phase 5 |
+| MinIO stockage compatible S3 | §2.2 | 📋 Phase 5 |
+| Migration données pg_dump / pg_restore | §2.2 | 📋 Phase 5 |
 
 ---
 
@@ -391,4 +406,4 @@ Avant tout merge / release, valider :
 
 ---
 
-*SPEC-KIT v1.0 · KAFORGE · Kinetic Axiom — Phase 3.5 livrée*
+*SPEC-KIT v1.0 · KAFORGE · Kinetic Axiom — Phase 3.5 livrée · Phase 4 = Coaching Solaris · Phase 5 = Infrastructure Souveraine*

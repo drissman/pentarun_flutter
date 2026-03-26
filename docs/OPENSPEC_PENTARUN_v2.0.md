@@ -80,10 +80,10 @@ PENTARUN v2.0 devient une **plateforme de compétition connectée** :
 
 | Phase | Infrastructure | Données |
 |---|---|---|
-| **2.1 → 3.5** | Supabase Cloud (supabase.com) | Hébergées Supabase |
-| **4+** | Migration optionnelle VPS auto-hébergé | Souveraineté KAFORGE |
+| **2.1 → 4** | Supabase Cloud (supabase.com) | Hébergées Supabase |
+| **5+** | Migration optionnelle VPS auto-hébergé | Souveraineté KAFORGE |
 
-**Migration Phase 3.5 → Phase 4 :** un seul changement dans le code Flutter (URL + anon key). Export/import PostgreSQL standard (`pg_dump` / `pg_restore`).
+**Migration Phase 4 → Phase 5 :** un seul changement dans le code Flutter (URL + anon key). Export/import PostgreSQL standard (`pg_dump` / `pg_restore`).
 
 ---
 
@@ -95,7 +95,7 @@ PENTARUN v2.0 devient une **plateforme de compétition connectée** :
 |---|---|---|
 | Email / Mot de passe | ✅ Natif | Phase 2.1 |
 | Google OAuth (Gmail) | ✅ Natif | Phase 2.1 |
-| SSO (SAML/OpenID) | ✅ Natif | Phase 4 |
+| SSO (SAML/OpenID) | ✅ Natif | Phase 5 |
 
 ### §3.2 — Rôles plateforme
 
@@ -482,14 +482,23 @@ Activation par l'admin via le dashboard Supabase (`UPDATE profiles SET features 
 - Ne transmet pas de vidéo à un serveur externe
 - Ne fonctionne pas si le device n'a pas de caméra frontale/arrière accessible
 
-### Phase 4 — Infrastructure Souveraine
-- Migration Supabase Cloud → VPS auto-hébergé
-- Infrastructure KAFORGE propriétaire
-
-### Phase 5 — Module Coaching Solaris
+### Phase 4 — Module Coaching Solaris
 - VMA, Vitesse Critique (élagués v1.x, réservés ici)
-- Recommandations entraînement basées sur TRIMP + historique
-- Planification périodisation
+- Charge hebdomadaire : TRIMP cumulé sur 7 jours (nécessite Phase 3)
+- Périodisation : cycles charge / récupération basés sur le TRIMP
+- Recommandations : volume, intensité, fréquence selon le niveau et l'historique
+- Nécessite Phase 3 (données HR + TRIMP) ✅ livré
+- Phase 5 (VPS) recommandée pour les calculs serveur, non bloquante
+
+### Phase 5 — Infrastructure Souveraine
+- Migration Supabase Cloud → VPS auto-hébergé KAFORGE
+- **Stack cible** : Hetzner / Scaleway (EU, RGPD)
+  - PostgreSQL self-hosted + pgBouncer (pooler connexions)
+  - GoTrue self-hosted (même lib qu'Supabase Auth)
+  - Supabase Realtime self-hosted (open-source)
+  - MinIO (stockage compatible S3)
+- Migration Flutter : un seul changement (`SupabaseConfig.supabaseUrl` + `anonKey`)
+- Migration données : `pg_dump` / `pg_restore` standard — sans transformation
 
 ---
 
@@ -569,16 +578,20 @@ Activation par l'admin via le dashboard Supabase (`UPDATE profiles SET features 
 | `_CvBadge` overlay sur AthleteRaceCard — alerte ambre écart > 2 | §8 Phase 3.5 | ✅ Implémenté Sprint 3 |
 | `AppState.cvEnabled` + `toggleCv()` + `updateCvRep()` | §8 Phase 3.5 | ✅ Implémenté Sprint 3 |
 | Reset `cvStationReps` au VALIDER, accumulation `cvTotalReps` | §8 Phase 3.5 | ✅ Implémenté Sprint 3 |
+| `flutter_blue_plus ^1.35.0` activé pubspec + permissions Android | §6.2 Natif | ✅ Activé natif |
+| `google_mlkit_pose_detection ^0.12.0` + `camera ^0.11.0` activés | §8 Phase 3.5 Natif | ✅ Activé natif |
+| AndroidManifest — BLUETOOTH_SCAN/CONNECT + CAMERA | §6.2 §3.5 | ✅ Activé natif |
+| APK Android release 95.9 MB | §6.2 §3.5 | ✅ Build validé |
 
 ### §9.4 — Élagage documenté
 
 | Feature | Justification | Réservé |
 |---|---|---|
-| VMA / Vitesse Critique | Complexité coaching — hors scope plateforme compétition | Phase 5 |
-| SSO SAML | Utile seulement pour fédérations sportives formelles | Phase 4 |
-| ANT+ (capteurs Garmin pro) | Requiert hardware spécial non BLE standard | Phase 4+ |
+| VMA / Vitesse Critique | Complexité coaching — hors scope plateforme compétition | Phase 4 |
+| SSO SAML | Utile seulement pour fédérations sportives formelles | Phase 5 |
+| ANT+ (capteurs Garmin pro) | Requiert hardware spécial non BLE standard | Phase 5+ |
 | Calibration terrain CV (seuils par niveau) | Nécessite données gymnase réelles — phase test terrain | Phase 3.5 v2 |
-| `google_mlkit_pose_detection` activé en production | Package non ajouté au pubspec — activation manuelle requise | Phase 3.5 v2 |
+| Calculs coaching serveur | Calculs périodisation lourds — recommandé sur VPS Phase 5 | Phase 4 optionnel |
 
 ---
 
@@ -675,5 +688,5 @@ Ce code s'exécute avant la construction de `_AuthGate`, garantissant que la ses
 
 ---
 
-*OPENSPEC PENTARUN v3.5 · KAFORGE · Kinetic Axiom*
-*Conforme SPEC-KIT v1.0 · A2UI v1.3*
+*OPENSPEC PENTARUN v3.5.1 · KAFORGE · Kinetic Axiom*
+*Conforme SPEC-KIT v1.0 · A2UI v1.3 — Phase 4 = Coaching Solaris · Phase 5 = Infrastructure Souveraine*

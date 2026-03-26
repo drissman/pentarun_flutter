@@ -221,8 +221,8 @@ supabase/
 | **v2.3** — Classements & Communauté | Ranking segmenté, records, progression individuelle, PDF | ✅ Livré |
 | **v3** — HR & Coefficients Dynamiques | BLE cardiofréquencemètre, TRIMP, coeff_physio | ✅ Livré |
 | **v3.5** — CV Assist *(Feature Gold)* | MediaPipe on-device, comptage automatique répétitions KB | ✅ Livré |
-| **v4** — Infrastructure Souveraine | Migration VPS auto-hébergé, sortie Supabase Cloud | 🔵 Prochain |
-| **v5** — Module Coaching Solaris | Planification entraînement, périodisation, VMA | 📋 Planifié |
+| **v4** — Module Coaching Solaris | Planification entraînement, périodisation TRIMP, VMA | 🔵 Prochain |
+| **v5** — Infrastructure Souveraine | Migration VPS auto-hébergé, sortie Supabase Cloud | 📋 Planifié |
 
 → Détail des issues : **[github.com/drissman/pentarun_flutter/issues](https://github.com/drissman/pentarun_flutter/issues)**
 
