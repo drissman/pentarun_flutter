@@ -416,26 +416,36 @@ class AthleteResultCard extends StatelessWidget {
           LayoutBuilder(
             builder: (ctx, constraints) {
               final wide = constraints.maxWidth > 580;
-              final pads = [
-                Flexible(
-                  child: SignaturePad(
-                    title: 'Juge Officiel',
-                    onSign: (data) =>
-                        state.setJudgeSignature(athlete.id, data),
-                  ),
-                ),
-                if (wide) const SizedBox(width: 16) else const SizedBox(height: 16),
-                Flexible(
-                  child: SignaturePad(
-                    title: 'Athlète',
-                    onSign: (data) =>
-                        state.setAthleteSignature(athlete.id, data),
-                  ),
-                ),
-              ];
-              return wide
-                  ? Row(children: pads)
-                  : Column(children: pads);
+              if (wide) {
+                return Row(
+                  children: [
+                    Flexible(child: SignaturePad(
+                      title: 'Juge Officiel',
+                      onSign: (data) => state.setJudgeSignature(athlete.id, data),
+                    )),
+                    const SizedBox(width: 16),
+                    Flexible(child: SignaturePad(
+                      title: 'Athlète',
+                      onSign: (data) => state.setAthleteSignature(athlete.id, data),
+                    )),
+                  ],
+                );
+              } else {
+                // Pas de Flexible dans une Column à hauteur non bornée
+                return Column(
+                  children: [
+                    SignaturePad(
+                      title: 'Juge Officiel',
+                      onSign: (data) => state.setJudgeSignature(athlete.id, data),
+                    ),
+                    const SizedBox(height: 16),
+                    SignaturePad(
+                      title: 'Athlète',
+                      onSign: (data) => state.setAthleteSignature(athlete.id, data),
+                    ),
+                  ],
+                );
+              }
             },
           ),
           const SizedBox(height: 20),

@@ -1,8 +1,11 @@
+import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/engine/energy_calculator.dart';
 import 'package:pentarun_flutter/engine/hr_calculator.dart';
+import 'package:pentarun_flutter/models/rep_counter_config.dart';
 import 'package:pentarun_flutter/services/cv_rep_session.dart';
+import 'package:pentarun_flutter/services/cv_service.dart';
 import 'package:pentarun_flutter/services/hr_session_service.dart';
 import 'package:pentarun_flutter/services/offline_queue.dart';
 import 'package:pentarun_flutter/models/age_category.dart';
@@ -40,8 +43,9 @@ class AppState extends ChangeNotifier {
   String? get toast => _toast;
 
   // SPEC-KIT §3.5.4 — Phase 3.5 : CV Assist feature flag + toggle session
-  bool _hasCvFeature = false;
+  bool _hasCvFeature = CvRepSession.instance.isSupported;
   bool _cvEnabled = false;
+  StreamSubscription<int>? _cvRepSubscription;
   bool get hasCvFeature => _hasCvFeature;
   bool get cvEnabled => _cvEnabled && _hasCvFeature;
 
@@ -51,19 +55,41 @@ class AppState extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Active / désactive le CV Assist pendant la course
+  /// Active / désactive le CV Assist depuis le Setup (avant la course)
+  /// → démarre uniquement l'aperçu caméra, pas encore le comptage
   void toggleCv() {
     if (!_hasCvFeature) return;
     _cvEnabled = !_cvEnabled;
-    if (!_cvEnabled) CvRepSession.instance.stop();
+    if (_cvEnabled) {
+      CvServiceImpl.instance.startCamera();
+    } else {
+      _cvRepSubscription?.cancel();
+      _cvRepSubscription = null;
+      CvRepSession.instance.stop();
+    }
     notifyListeners();
   }
 
-  /// Incrémente le compteur CV de station pour un athlète (appelé depuis CvRepSession)
-  void updateCvRep(String athleteId) {
+  /// Démarre le comptage CV pour un athlète (appelé par startRacing)
+  void _startCvCounting() {
+    if (!_cvEnabled || _athletes.isEmpty) return;
+    final a = _athletes.first;
+    CvRepSession.instance.startFor(
+      athleteId: a.id,
+      config: RepCounterConfig.defaultConfig,
+    );
+    _cvRepSubscription?.cancel();
+    _cvRepSubscription = CvRepSession.instance.repStream.listen((reps) {
+      final activeId = CvRepSession.instance.activeAthleteId;
+      if (activeId != null) setCvStationReps(activeId, reps);
+    });
+  }
+
+  /// Met à jour le compteur CV de station (total détecté par la caméra)
+  void setCvStationReps(String athleteId, int reps) {
     _athletes = _athletes.map((a) {
       if (a.id != athleteId) return a;
-      return a.copyWith(cvStationReps: (a.cvStationReps ?? 0) + 1);
+      return a.copyWith(cvStationReps: reps);
     }).toList();
     notifyListeners();
   }
@@ -140,6 +166,11 @@ class AppState extends ChangeNotifier {
   // ─── ATHLETES ───────────────────────────────────────────────────────────────
   void addAthlete() {
     if (formName.trim().isEmpty) return;
+    // Si CV activé : 1 seul athlète par vague (1 caméra = 1 athlète)
+    if (_cvEnabled && _athletes.isNotEmpty) {
+      showToast('CV actif : 1 athlète max par vague');
+      return;
+    }
     final energy = EnergyCalculator.calculate(
       weightAthleteKg: formWeight,
       heightAthleteCm: formHeight,
@@ -179,11 +210,30 @@ class AppState extends ChangeNotifier {
         .map((a) => a.copyWith(status: AthleteStatus.running))
         .toList();
     _phase = AppPhase.racing;
+    // Si CV activé en Setup → démarrer le comptage automatiquement
+    _startCvCounting();
     notifyListeners();
   }
 
   void goToSummary() {
     _phase = AppPhase.summary;
+    // Calcul HR pour chaque athlète terminé ayant un profil avec coeffAge/coeffSexe
+    _athletes = _athletes.map((a) {
+      if (a.hrMetrics != null) return a;
+      if (a.coeffAge == null || a.coeffSexe == null) return a;
+      final rawMetrics = HrSessionService.instance.computeMetrics(
+        coeffAge: a.coeffAge!,
+        coeffSexe: a.coeffSexe!,
+      );
+      if (rawMetrics == null || a.finalTimeMs == null) return a;
+      final psHr = HrCalculator.platformScoreHr(
+        finalTimeMs: a.finalTimeMs!,
+        coeffKb: a.coeff,
+        coeffPhysio: rawMetrics.coeffPhysio,
+        coeffSexe: a.coeffSexe!,
+      );
+      return a.copyWith(hrMetrics: rawMetrics.withPlatformScoreHr(psHr));
+    }).toList();
     notifyListeners();
   }
 
@@ -260,7 +310,7 @@ class AppState extends ChangeNotifier {
           officialScore: updated.officialScore,
           platformScore: updated.platformScore,
         ).then((_) {
-          offlineFlush(_replayItem).catchError((_) {});
+          offlineFlush(_replayItem).catchError((_) => 0);
         }).catchError((_) {
           offlineEnqueue(payload).catchError((_) {});
         });
@@ -408,7 +458,7 @@ class AppState extends ChangeNotifier {
         officialScore: athlete.officialScore,
         platformScore: athlete.platformScore,
       ).then((_) {
-        offlineFlush(_replayItem).catchError((_) {});
+        offlineFlush(_replayItem).catchError((_) => 0);
       }).catchError((_) {
         offlineEnqueue(payload).catchError((_) {});
       });

@@ -1,8 +1,8 @@
 # OPENSPEC PENTARUN — v2.0
 
 > **Kinetic Axiom / KAFORGE**
-> Version : 3.5 — CV Assist + HR Dynamique + Classements
-> Précédente version : 2.2 (Compétition Connectée Complète)
+> Version : 3.5.1 — Ergonomie Racing + BLE Fiabilité + CV Full-Screen
+> Précédente version : 3.5 (CV Assist + HR Dynamique + Classements)
 > Date : 26 Mars 2026
 > Frameworks : OPENSPEC · SPEC-KIT v1.0 · A2UI v1.3
 
@@ -685,6 +685,76 @@ Ce code s'exécute avant la construction de `_AuthGate`, garantissant que la ses
 **Correction** : Remplacer tous les appels `color.withOpacity(x)` par `color.withValues(alpha: x)`.
 
 **Règle** : Utiliser exclusivement `withValues(alpha:)` pour les opacités dynamiques. `withOpacity` est interdit dans tout nouveau code PENTARUN.
+
+---
+
+### §11.9 — ERRATA v3.5.1 — Ergonomie Racing + BLE Fiabilité + CV Full-Screen
+
+**Date :** 26 Mars 2026
+
+#### §11.9.1 — CV : toggle mal positionné (RacingScreen → SetupScreen)
+
+**Problème** : Le toggle CV était accessible uniquement depuis l'écran de course — l'athlète ne pouvait pas se cadrer face caméra avant le départ.
+
+**Correction** : `_CvSetupCard` ajouté dans `SetupScreen` (avant le départ). `toggleCv()` démarre uniquement l'aperçu caméra. Le comptage CV démarre automatiquement via `_startCvCounting()` appelé par `startRacing()`.
+
+**Règle** : La caméra doit être configurée et testée AVANT le départ de la vague.
+
+#### §11.9.2 — CV : caméra plein écran translucide obligatoire
+
+**Problème** : La caméra occupait un bloc dédié → réduisait l'espace disponible pour les boutons.
+
+**Correction** : `RacingScreen` utilise un `Stack` avec `Positioned.fill(CvServiceImpl.buildPreview())` + overlay `Container(Colors.black, alpha: 0.58)`. L'UI repose par-dessus en `SafeArea`.
+
+**Règle** : Le retour caméra est exclusivement un fond translucide en course. Aucun bloc dédié.
+
+#### §11.9.3 — CV : 1 athlète max si CV actif
+
+**Problème** : Plusieurs athlètes pouvaient être ajoutés alors qu'une seule caméra peut compter.
+
+**Correction** : `addAthlete()` bloque si `_cvEnabled == true` et `_athletes.isNotEmpty`. Toast affiché : "CV actif : 1 athlète max par vague".
+
+**Règle** : 1 caméra = 1 athlète. Invariant garanti par AppState.
+
+#### §11.9.4 — CV : API `updateCvRep` incomplète → `setCvStationReps(id, reps)`
+
+**Problème** : `updateCvRep(athleteId)` ne passait pas le nombre de reps détectés.
+
+**Correction** : Remplacé par `setCvStationReps(String athleteId, int reps)`.
+
+#### §11.9.5 — CV : `_CvBadge` remplacé par `_CvCounter`
+
+**Problème** : `_CvBadge` (alerte ambre si écart > 2) ne montrait pas le compteur — le juge ne pouvait pas suivre en temps réel.
+
+**Correction** : `_CvCounter` — chiffre 56px monospace, barre de progression, couleurs cyan→vert→ambre selon avancement.
+
+#### §11.9.6 — CV : `buildPreview()` absent de l'interface CV
+
+**Problème** : Aucune méthode `buildPreview()` sur `CvServiceImpl` (stub ni native) → impossible d'afficher la caméra dans l'UI sans import conditionnel dans chaque widget.
+
+**Correction** : `buildPreview()` ajouté dans `cv_service_stub.dart` (retourne `SizedBox()`) et `cv_service_native.dart` (retourne `FittedBox(cover)` avec `previewSize` réelle). Appelable sans condition depuis n'importe quel widget.
+
+#### §11.9.7 — BLE : reconnexion automatique absente
+
+**Problème** : Perte BLE en course = session HR perdue sans récupération possible.
+
+**Correction** : `HrSessionService` — `_lastDeviceId`, `_manualDisconnect`, `_reconnectAttempts` (max 5), `_scheduleReconnect()` avec délai croissant (attempts × 2s).
+
+#### §11.9.8 — BLE : MTU timeout bloquant (Samsung Galaxy A54 / Huawei)
+
+**Problème** : `device.connect()` de flutter_blue_plus déclenche une exception `requestMtu timeout` sur certains appareils, non bloquante fonctionnellement mais non gérée.
+
+**Correction** : `device.connect()` wrappé dans try-catch avec `debugPrint` (non fatal).
+
+#### §11.9.9 — Layout non adaptatif (phone/phablet/tablet)
+
+**Problème** : Padding, colonnes de formulaire et hauteurs de cartes hardcodés → rendu cassé sur smartphone portrait.
+
+**Correction** :
+- Padding : `(screenW * 0.03).clamp(8, 24)` racing / `(screenW * 0.04).clamp(10, 28)` setup
+- Colonnes formulaire : `(width / 180).floor().clamp(1, 6)`
+- Colonnes cartes racing : `w > 900 ? 3 : w > 560 ? 2 : 1`
+- Hauteur cartes : remplit l'écran si 1 seule ligne, sinon `(h * 0.9).clamp(340, 640)`
 
 ---
 

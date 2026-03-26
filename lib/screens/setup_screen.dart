@@ -4,6 +4,7 @@ import 'package:pentarun_flutter/models/hr_device.dart';
 import 'package:pentarun_flutter/screens/competition_list_screen.dart';
 import 'package:pentarun_flutter/screens/profile_screen.dart';
 import 'package:pentarun_flutter/screens/wave_join_screen.dart';
+import 'package:pentarun_flutter/services/cv_service.dart';
 import 'package:pentarun_flutter/services/hr_session_service.dart';
 import 'package:pentarun_flutter/services/profile_service.dart';
 import 'package:pentarun_flutter/state/app_state.dart';
@@ -162,9 +163,12 @@ class SetupScreen extends StatelessWidget {
     final athletes = state.athletes;
     final hasAthletes = athletes.isNotEmpty;
 
+    final screenW = MediaQuery.of(context).size.width;
+    final padding = (screenW * 0.04).clamp(10.0, 28.0);
+
     return SingleChildScrollView(
       child: Padding(
-        padding: const EdgeInsets.all(24),
+        padding: EdgeInsets.all(padding),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -180,16 +184,18 @@ class SetupScreen extends StatelessWidget {
                     children: [
                       const Icon(Icons.monitor_heart, color: A2Colors.cyan, size: 24),
                       const SizedBox(width: 12),
-                      const Text(
-                        'CONFIGURATION VAGUE',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w900,
-                          letterSpacing: 1.5,
-                          fontSize: 19,
-                          color: A2Colors.blanc,
+                      const Flexible(
+                        child: Text(
+                          'CONFIGURATION VAGUE',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: 1.5,
+                            fontSize: 19,
+                            color: A2Colors.blanc,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ),
-                      const Spacer(),
                       IconButton(
                         icon: const Icon(Icons.emoji_events_outlined, color: A2Colors.gris1),
                         tooltip: 'Mes compétitions',
@@ -268,6 +274,12 @@ class SetupScreen extends StatelessWidget {
                   const _HrPairingCard(),
                   const SizedBox(height: 16),
 
+                  // SPEC-KIT §3.5.4 — Phase 3.5 : CV Assist (avant la course)
+                  if (state.hasCvFeature) ...[
+                    _CvSetupCard(state: state),
+                    const SizedBox(height: 16),
+                  ],
+
                   // Rejoindre vague connectée
                   SizedBox(
                     width: double.infinity,
@@ -333,6 +345,80 @@ class SetupScreen extends StatelessWidget {
   }
 }
 
+// ─── CV Assist Setup — Phase 3.5 ─────────────────────────────────────────────
+
+class _CvSetupCard extends StatelessWidget {
+  final AppState state;
+  const _CvSetupCard({required this.state});
+
+  @override
+  Widget build(BuildContext context) {
+    final enabled = state.cvEnabled;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: A2Colors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: enabled
+              ? A2Colors.vert.withValues(alpha: 0.5)
+              : A2Colors.border2,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(children: [
+            Icon(Icons.videocam_outlined,
+                color: enabled ? A2Colors.vert : A2Colors.gris1, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              'CV ASSIST — COMPTAGE REPS',
+              style: TextStyle(
+                color: enabled ? A2Colors.vert : A2Colors.gris1,
+                fontWeight: FontWeight.w900,
+                fontSize: 10,
+                letterSpacing: 1.5,
+              ),
+            ),
+            const Spacer(),
+            Switch(
+              value: enabled,
+              onChanged: (_) => state.toggleCv(),
+              activeColor: A2Colors.vert,
+            ),
+          ]),
+          if (enabled) ...[
+            const SizedBox(height: 4),
+            Text(
+              '1 athlète max — caméra frontale face à l\'athlète',
+              style: const TextStyle(
+                  color: A2Colors.gris1, fontSize: 10),
+            ),
+            const SizedBox(height: 10),
+            // Aperçu caméra
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: AspectRatio(
+                aspectRatio: 4 / 3,
+                child: CvServiceImpl.instance.buildPreview(),
+              ),
+            ),
+          ] else ...[
+            const SizedBox(height: 6),
+            const Text(
+              'Activez avant la course pour compter les reps automatiquement.\n'
+              'La caméra frontale détecte les mouvements kettlebell.',
+              style: TextStyle(color: A2Colors.gris1, fontSize: 10),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Appairage Capteur HR — Phase 3 ──────────────────────────────────────────
 
 class _HrPairingCard extends StatefulWidget {
@@ -346,19 +432,25 @@ class _HrPairingCardState extends State<_HrPairingCard> {
   final _hr = HrSessionService.instance;
   List<HrDevice> _found = [];
   bool _scanning = false;
+  bool _connecting = false;
 
   Future<void> _scan() async {
-    if (!_hr.bleSupported) return;
+    if (!_hr.bleSupported || _scanning) return;
     setState(() { _scanning = true; _found = []; });
-    await for (final devices in _hr.scan(timeout: const Duration(seconds: 8))) {
+    await for (final devices in _hr.scan(timeout: const Duration(seconds: 5))) {
       if (mounted) setState(() => _found = devices);
     }
     if (mounted) setState(() => _scanning = false);
   }
 
   Future<void> _connect(HrDevice d) async {
-    await _hr.connect(d.id);
-    if (mounted) setState(() {});
+    if (_connecting) return;
+    setState(() => _connecting = true);
+    try {
+      await _hr.connect(d.id);
+    } finally {
+      if (mounted) setState(() => _connecting = false);
+    }
   }
 
   Future<void> _disconnect() async {
@@ -458,44 +550,54 @@ class _HrPairingCardState extends State<_HrPairingCard> {
                 style: const TextStyle(
                     color: A2Colors.blanc, fontWeight: FontWeight.w900, fontSize: 12)),
             const SizedBox(height: 8),
-            GestureDetector(
+            InkWell(
               onTap: _disconnect,
-              child: const Text('DÉCONNECTER',
-                  style: TextStyle(color: A2Colors.rouge, fontSize: 10,
-                      fontWeight: FontWeight.w900, letterSpacing: 1)),
+              borderRadius: BorderRadius.circular(4),
+              child: const Padding(
+                padding: EdgeInsets.symmetric(vertical: 4),
+                child: Text('DÉCONNECTER',
+                    style: TextStyle(color: A2Colors.rouge, fontSize: 10,
+                        fontWeight: FontWeight.w900, letterSpacing: 1)),
+              ),
             ),
           ] else ...[
             // Scan + liste
             Row(children: [
               Expanded(
-                child: _found.isEmpty
-                    ? Text(
-                        _scanning ? 'Recherche en cours...' : 'Aucun capteur trouvé.',
-                        style: const TextStyle(color: A2Colors.gris1, fontSize: 10))
-                    : Wrap(
-                        spacing: 8,
-                        children: _found.map((d) => GestureDetector(
-                          onTap: () => _connect(d),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: A2Colors.surface,
+                child: _connecting
+                    ? const Text('Connexion en cours...',
+                        style: TextStyle(color: A2Colors.cyan, fontSize: 10))
+                    : _found.isEmpty
+                        ? Text(
+                            _scanning ? 'Recherche en cours...' : 'Aucun capteur trouvé.',
+                            style: const TextStyle(color: A2Colors.gris1, fontSize: 10))
+                        : Wrap(
+                            spacing: 8,
+                            runSpacing: 6,
+                            children: _found.map((d) => InkWell(
+                              onTap: () => _connect(d),
                               borderRadius: BorderRadius.circular(6),
-                              border: Border.all(color: A2Colors.border2),
-                            ),
-                            child: Text(d.name,
-                                style: const TextStyle(
-                                    color: A2Colors.cyan, fontSize: 10,
-                                    fontWeight: FontWeight.w900)),
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                                decoration: BoxDecoration(
+                                  color: A2Colors.surface,
+                                  borderRadius: BorderRadius.circular(6),
+                                  border: Border.all(color: A2Colors.cyan.withValues(alpha: 0.5)),
+                                ),
+                                child: Text(d.name,
+                                    style: const TextStyle(
+                                        color: A2Colors.cyan, fontSize: 10,
+                                        fontWeight: FontWeight.w900)),
+                              ),
+                            )).toList(),
                           ),
-                        )).toList(),
-                      ),
               ),
               const SizedBox(width: 12),
-              GestureDetector(
+              InkWell(
                 onTap: _scanning ? null : _scan,
+                borderRadius: BorderRadius.circular(8),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                   decoration: BoxDecoration(
                     color: A2Colors.surface,
                     borderRadius: BorderRadius.circular(8),
@@ -503,10 +605,10 @@ class _HrPairingCardState extends State<_HrPairingCard> {
                   ),
                   child: _scanning
                       ? const SizedBox(
-                          width: 12, height: 12,
+                          width: 14, height: 14,
                           child: CircularProgressIndicator(
                               color: A2Colors.cyan, strokeWidth: 2))
-                      : const Icon(Icons.bluetooth_searching, color: A2Colors.cyan, size: 16),
+                      : const Icon(Icons.bluetooth_searching, color: A2Colors.cyan, size: 18),
                 ),
               ),
             ]),

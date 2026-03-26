@@ -6,6 +6,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'dart:ui' show Size;
 import 'package:camera/camera.dart';
+import 'package:flutter/material.dart';
 import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
 import 'package:pentarun_flutter/models/pose_landmark.dart' as app;
 
@@ -17,6 +18,26 @@ class CvServiceImpl {
 
   CameraController? _cameraController;
   PoseDetector? _poseDetector;
+
+  /// Aperçu caméra — ratio d'aspect correct, pas de déformation
+  Widget buildPreview() {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      return const SizedBox();
+    }
+    return ClipRect(
+      child: OverflowBox(
+        alignment: Alignment.center,
+        child: FittedBox(
+          fit: BoxFit.cover,
+          child: SizedBox(
+            width: _cameraController!.value.previewSize!.height,
+            height: _cameraController!.value.previewSize!.width,
+            child: CameraPreview(_cameraController!),
+          ),
+        ),
+      ),
+    );
+  }
   bool _processing = false; // anti-pile-up : on skip les frames en cours de traitement
 
   final _controller = StreamController<List<app.PoseLandmark>>.broadcast();

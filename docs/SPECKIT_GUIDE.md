@@ -272,14 +272,30 @@ Le SPEC-KIT structure le développement en phases numérotées. Chaque phase a u
 | `AthleteProfile.features` + `hasCvFeature` getter | §8 Phase 3.5 | ✅ Implémenté v3.5 |
 | `Athlete.cvStationReps`, `cvTotalReps` nullable | §8 Phase 3.5 | ✅ Implémenté v3.5 |
 | `RaceResult.cvRepCount` nullable | §8 Phase 3.5 | ✅ Implémenté v3.5 |
-| `AppState.cvEnabled` + `toggleCv()` + `updateCvRep(athleteId)` | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `AppState.cvEnabled` + `toggleCv()` + `setCvStationReps(id, reps)` | §8 Phase 3.5 | ✅ v3.5 / corrigé §11.9 |
 | `validateStation` — reset cvStationReps + accumulation cvTotalReps | §8 Phase 3.5 | ✅ Implémenté v3.5 |
-| `_CvBadge` overlay — alerte ambre si `|cvReps − expectedReps| > 2` | §8 Phase 3.5 | ✅ Implémenté v3.5 |
+| `_CvCounter` grand format (56px, barre progression, cyan/vert/ambre) | §8 Phase 3.5 | ✅ v3.5 / corrigé §11.9 |
 | Couleur `withValues(alpha:)` — fix deprecation Flutter 3.x (§11.8) | §11.8 ERRATA | ✅ Corrigé v3.5 |
 | `flutter_blue_plus ^1.35.0` activé pubspec + permissions Android | §6.2 Natif | ✅ Activé natif |
 | `google_mlkit_pose_detection ^0.12.0` + `camera ^0.11.0` activés | §8 Phase 3.5 Natif | ✅ Activé natif |
 | AndroidManifest BLE (BLUETOOTH_SCAN/CONNECT) + CAMERA | §6.2 §3.5 | ✅ Activé natif |
 | APK Android release 95.9 MB | §6.2 §3.5 | ✅ Build validé |
+
+**Sprint 4 — Ergonomie Racing + Auto-Reconnect BLE (ERRATA §11.9)**
+
+| Fonctionnalité | Référence OPENSPEC v3.5 | Statut |
+|---|---|---|
+| BLE auto-reconnect — 5 tentatives, délai croissant 2–10s | §6.2 §11.9 ERRATA | ✅ Corrigé v3.5.1 |
+| MTU timeout Samsung/Huawei — try-catch non bloquant | §6.2 §11.9 ERRATA | ✅ Corrigé v3.5.1 |
+| Scan BLE réduit à 5s (was 10s) | §6.2 §11.9 ERRATA | ✅ Corrigé v3.5.1 |
+| `CvServiceImpl.buildPreview()` — stub (SizedBox) + native (FittedBox cover) | §8 Phase 3.5 §11.9 | ✅ Corrigé v3.5.1 |
+| `toggleCv()` → démarre uniquement l'aperçu caméra (pas le comptage) | §8 Phase 3.5 §11.9 | ✅ Corrigé v3.5.1 |
+| `_startCvCounting()` appelé par `startRacing()` (comptage auto au départ) | §8 Phase 3.5 §11.9 | ✅ Corrigé v3.5.1 |
+| `_CvSetupCard` dans SetupScreen — toggle CV avant la course | §8 Phase 3.5 §11.9 | ✅ Corrigé v3.5.1 |
+| Caméra plein écran translucide (Stack Positioned.fill, 0.58 alpha) | §4.2 §8 §11.9 | ✅ Corrigé v3.5.1 |
+| 1 athlète max si CV actif — `addAthlete()` bloque avec toast | §8 Phase 3.5 §11.9 | ✅ Corrigé v3.5.1 |
+| Layout responsive toutes tailles écran (phone/phablet/tablet) | §4.1 §4.2 §11.9 | ✅ Corrigé v3.5.1 |
+| `_buildHeader()` extrait — LIVE dot + BPM StreamBuilder + chrono FittedBox | §4.2 §11.9 | ✅ Corrigé v3.5.1 |
 
 #### Phase 4 — Module Coaching Solaris 📋
 
@@ -401,6 +417,13 @@ Avant tout merge / release, valider :
 | Jointure `profiles!inner(...)` pour accès spectateur | Nécessite auth → utiliser display_name dénormalisé + anon SELECT → §7.2 |
 | Politiques RLS manquantes pour `anon` | Spectateur voit "permission denied" → ajouter policies TO anon sur competitions/waves/wave_athletes → §7.2 |
 | `color.withOpacity(x)` dans tout nouveau code | Deprecated Flutter 3.x — pertes de précision colorimétrique → utiliser `color.withValues(alpha: x)` → §11.8 ERRATA |
+| Toggle CV dans RacingScreen | UX incorrecte — la caméra doit être activée AVANT le départ (Setup), pas pendant la course → §11.9 ERRATA |
+| `updateCvRep(athleteId)` sans paramètre reps | API incomplète — remplacé par `setCvStationReps(athleteId, reps)` → §11.9 ERRATA |
+| `_CvBadge` (alerte ambre) sans compteur visible | Juge ne peut pas suivre le décompte en temps réel → remplacé par `_CvCounter` 56px → §11.9 ERRATA |
+| `buildPreview()` absent du service CV | Le widget Racing ne peut pas afficher la caméra sans cette méthode sur stub ET native → §11.9 ERRATA |
+| Camera full-screen absente pendant la course | L'athlète ne peut pas cadrer face caméra et les boutons sont trop petits → Stack Positioned.fill obligatoire → §11.9 ERRATA |
+| `device.connect()` sans try-catch | Samsung Galaxy A54 / Huawei : requestMtu lance une exception non bloquante → wrapper en try-catch → §11.9 ERRATA |
+| BLE sans auto-reconnect | Reconnexion perdue = session HR perdue en pleine course → `_scheduleReconnect()` obligatoire → §11.9 ERRATA |
 | Feature native-only sans pattern stub/native | BLE et CV ne compilent pas sur Flutter Web → toujours stub + conditional export dart.library.io |
 | `const Map<double, double>` avec clés double | Dart interdit les const map avec clés double (équality non primitive) → utiliser if/else chain → cf. HrCalculator |
 

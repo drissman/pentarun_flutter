@@ -243,11 +243,11 @@ class AthleteRaceCard extends StatelessWidget {
             ),
           ),
         ],
-        // SPEC-KIT §3.5.4 — Phase 3.5 : badge CV Assist si feature activée
-        if (state.cvEnabled && athlete.cvStationReps != null) ...[
-          const SizedBox(height: 8),
-          _CvBadge(
-            cvReps: athlete.cvStationReps!,
+        // SPEC-KIT §3.5.4 — Phase 3.5 : compteur CV si feature activée
+        if (state.cvEnabled) ...[
+          const SizedBox(height: 12),
+          _CvCounter(
+            cvReps: athlete.cvStationReps ?? 0,
             expectedReps: athlete.level.repsPerStation,
           ),
         ],
@@ -403,45 +403,111 @@ class _StationRingPainter extends CustomPainter {
   bool shouldRepaint(_StationRingPainter old) => old.current != current;
 }
 
-// ─── CV Assist Badge ──────────────────────────────────────────────────────────
+// ─── CV Compteur grand format ─────────────────────────────────────────────────
 
-class _CvBadge extends StatelessWidget {
+class _CvCounter extends StatelessWidget {
   final int cvReps;
   final int expectedReps;
 
-  const _CvBadge({required this.cvReps, required this.expectedReps});
+  const _CvCounter({required this.cvReps, required this.expectedReps});
 
   @override
   Widget build(BuildContext context) {
-    final discrepancy = (cvReps - expectedReps).abs();
-    final isAlert = cvReps > 0 && discrepancy > 2;
-    final color = isAlert ? A2Colors.ambre : A2Colors.vert;
+    final done = expectedReps > 0 && cvReps >= expectedReps;
+    final over = cvReps > expectedReps;
+    final color = over
+        ? A2Colors.ambre
+        : done
+            ? A2Colors.vert
+            : A2Colors.cyan;
+    final progress =
+        expectedReps > 0 ? (cvReps / expectedReps).clamp(0.0, 1.0) : 0.0;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        border: Border.all(color: color.withValues(alpha: 0.4)),
-        borderRadius: BorderRadius.circular(6),
+        color: color.withValues(alpha: 0.07),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+        borderRadius: BorderRadius.circular(10),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
+      child: Column(
         children: [
-          Icon(Icons.videocam, size: 12, color: color),
-          const SizedBox(width: 5),
-          Text(
-            'CV: $cvReps / $expectedReps reps',
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w900,
-              fontSize: 11,
-              letterSpacing: 0.5,
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.videocam, size: 14, color: color),
+                  const SizedBox(width: 6),
+                  Text(
+                    'CV ASSIST',
+                    style: TextStyle(
+                      color: color,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 10,
+                      letterSpacing: 1.5,
+                    ),
+                  ),
+                ],
+              ),
+              if (over)
+                Row(children: [
+                  Icon(Icons.warning_amber_rounded, size: 14, color: A2Colors.ambre),
+                  const SizedBox(width: 4),
+                  Text('DÉPASSÉ', style: TextStyle(color: A2Colors.ambre, fontSize: 9, fontWeight: FontWeight.w900)),
+                ]),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            children: [
+              Text(
+                '$cvReps',
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 56,
+                  fontWeight: FontWeight.w900,
+                  color: color,
+                  height: 1,
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                '/ $expectedReps',
+                style: TextStyle(
+                  fontFamily: 'monospace',
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                  color: color.withValues(alpha: 0.6),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Text(
+                'REPS',
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w900,
+                  color: color.withValues(alpha: 0.5),
+                  letterSpacing: 1,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          // Barre de progression
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: progress,
+              minHeight: 6,
+              backgroundColor: color.withValues(alpha: 0.15),
+              valueColor: AlwaysStoppedAnimation<Color>(color),
             ),
           ),
-          if (isAlert) ...[
-            const SizedBox(width: 5),
-            Icon(Icons.warning_amber_rounded, size: 12, color: color),
-          ],
         ],
       ),
     );

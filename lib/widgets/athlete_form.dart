@@ -227,11 +227,8 @@ class _AthleteFormState extends State<AthleteForm> {
           // ── Champs manuels ────────────────────────────────────────────────
           LayoutBuilder(
             builder: (context, constraints) {
-              final crossCount = constraints.maxWidth > 800
-                  ? 6
-                  : constraints.maxWidth > 500
-                      ? 3
-                      : 2;
+              // Auto-adaptatif : 1 col tous les ~180dp disponibles (min 1, max 6)
+              final crossCount = (constraints.maxWidth / 180).floor().clamp(1, 6);
               return Wrap(
                 spacing: 12,
                 runSpacing: 12,
