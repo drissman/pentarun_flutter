@@ -3,9 +3,8 @@
 # Crée un AVD Android 36 (tablette 10") avec la Logitech BRIO comme caméra
 # et lance l'émulateur prêt pour flutter run
 #
-# Usage (PowerShell admin) :
-#   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
-#   .\scripts\Create-PentarunAVD.ps1
+# Usage :
+#   powershell.exe -ExecutionPolicy Bypass -File .\scripts\Create-PentarunAVD.ps1
 # ============================================================================
 
 $ErrorActionPreference = "Stop"
@@ -45,61 +44,56 @@ if (-not (Test-Path $sysImagePath)) {
 OK "System image android-36/google_apis_playstore/x86_64 présente"
 
 # ── 2. Vérifier si l'AVD existe déjà ─────────────────────────────────────────
+$skipCreate = $false
 if (Test-Path $AVD_DIR) {
     WARN "L'AVD '$AVD_NAME' existe déjà."
     $rep = Read-Host "  Recréer ? (o/N)"
     if ($rep -ne "o" -and $rep -ne "O") {
         INFO "AVD conservé tel quel — passage au lancement."
-        goto Launch
+        $skipCreate = $true
+    } else {
+        INFO "Suppression de l'ancien AVD..."
+        Remove-Item -Recurse -Force $AVD_DIR
+        if (Test-Path $AVD_INI) { Remove-Item -Force $AVD_INI }
+        OK "Ancien AVD supprimé"
     }
-    INFO "Suppression de l'ancien AVD..."
-    Remove-Item -Recurse -Force $AVD_DIR
-    if (Test-Path $AVD_INI) { Remove-Item -Force $AVD_INI }
-    OK "Ancien AVD supprimé"
 }
 
-# ── 3. Créer le dossier AVD ───────────────────────────────────────────────────
-INFO "Création du dossier AVD..."
-New-Item -ItemType Directory -Force -Path $AVD_DIR | Out-Null
-OK "Dossier créé : $AVD_DIR"
+if (-not $skipCreate) {
+    # ── 3. Créer le dossier AVD ───────────────────────────────────────────────
+    INFO "Création du dossier AVD..."
+    New-Item -ItemType Directory -Force -Path $AVD_DIR | Out-Null
+    OK "Dossier créé : $AVD_DIR"
 
-# ── 4. Fichier pointeur .ini ──────────────────────────────────────────────────
-INFO "Écriture du fichier pointeur ($AVD_NAME.ini)..."
-$iniContent = @"
+    # ── 4. Fichier pointeur .ini ──────────────────────────────────────────────
+    INFO "Écriture du fichier pointeur ($AVD_NAME.ini)..."
+    $iniContent = @"
 avd.ini.encoding=UTF-8
 path=$AVD_DIR
 path.rel=avd\$AVD_NAME.avd
 target=android-36
 "@
-Set-Content -Path $AVD_INI -Value $iniContent -Encoding UTF8
-OK "Pointeur écrit"
+    Set-Content -Path $AVD_INI -Value $iniContent -Encoding UTF8
+    OK "Pointeur écrit"
 
-# ── 5. Fichier config.ini principal ──────────────────────────────────────────
-INFO "Écriture de config.ini (tablette 10'', RAM 4 Go, GPU host)..."
-$configContent = @"
+    # ── 5. Fichier config.ini principal ──────────────────────────────────────
+    INFO "Écriture de config.ini (tablette 10'', RAM 4 Go, GPU host)..."
+    $configContent = @"
 AvdId=$AVD_NAME
 PlayStore.enabled=true
 abi.type=x86_64
 avd.ini.displayname=Pentarun Tablet (BRIO)
 avd.ini.encoding=UTF-8
-
-# Stockage
 disk.cachePartition=yes
 disk.cachePartition.size=300MB
 disk.dataPartition.size=6442450944
 sdcard.size=512M
-
-# Caméra — Logitech BRIO mappée sur front ET back
 hw.camera.back=webcam0
 hw.camera.front=webcam0
-
-# CPU / RAM
 hw.cpu.arch=x86_64
 hw.cpu.ncore=4
 hw.ramSize=4096
 vm.heapSize=512
-
-# Écran tablette 10'' WUXGA (1920x1200 @ 240dpi)
 hw.lcd.width=1920
 hw.lcd.height=1200
 hw.lcd.density=240
@@ -107,23 +101,15 @@ hw.initialOrientation=landscape
 skin.name=1920x1200
 skin.path=_no_skin
 skin.dynamic=yes
-
-# GPU — utilise le GPU Windows directement
 hw.gpu.enabled=yes
 hw.gpu.mode=host
-
-# Capteurs
 hw.accelerometer=yes
 hw.gps=yes
 hw.gyroscope=yes
 hw.sensors.orientation=yes
 hw.sensors.proximity=no
-
-# Réseau
 runtime.network.latency=none
 runtime.network.speed=full
-
-# Misc
 hw.audioInput=yes
 hw.battery=yes
 hw.dPad=no
@@ -133,38 +119,36 @@ hw.sdCard=yes
 hw.trackBall=no
 fastboot.forceColdBoot=no
 showDeviceFrame=no
-
-# System image
 image.sysdir.1=$SYSIMAGE\
 tag.display=Google Play
 tag.id=google_apis_playstore
 "@
-Set-Content -Path "$AVD_DIR\config.ini" -Value $configContent -Encoding UTF8
-OK "config.ini écrit"
+    Set-Content -Path "$AVD_DIR\config.ini" -Value $configContent -Encoding UTF8
+    OK "config.ini écrit"
 
-# ── 6. Vérification webcam ────────────────────────────────────────────────────
-Write-Host ""
-INFO "Détection des webcams disponibles sur ce système..."
-$webcams = Get-PnpDevice -Class Camera -Status OK 2>$null
-if ($webcams) {
-    $webcams | ForEach-Object { OK "Webcam détectée : $($_.FriendlyName)" }
-} else {
-    WARN "Impossible de lister les webcams via PnP — la BRIO sera détectée au démarrage de l'émulateur"
+    # ── 6. Vérification webcam ────────────────────────────────────────────────
+    Write-Host ""
+    INFO "Détection des webcams disponibles sur ce système..."
+    $webcams = Get-PnpDevice -Class Camera -Status OK 2>$null
+    if ($webcams) {
+        $webcams | ForEach-Object { OK "Webcam détectée : $($_.FriendlyName)" }
+    } else {
+        WARN "Impossible de lister les webcams via PnP — la BRIO sera détectée au démarrage de l'émulateur"
+    }
+
+    # ── 7. Résumé ─────────────────────────────────────────────────────────────
+    Write-Host ""
+    Write-Host "  ════════════════════════════════════════════════════" -ForegroundColor Magenta
+    OK "AVD '$AVD_NAME' créé avec succès !"
+    Write-Host ""
+    Write-Host "  Configuration :" -ForegroundColor White
+    Write-Host "    Android 36 (API 36) · Google Play Store" -ForegroundColor Gray
+    Write-Host "    Tablette 10'' 1920x1200 · 4 Go RAM · GPU host" -ForegroundColor Gray
+    Write-Host "    Caméra front + back : webcam0 (Logitech BRIO)" -ForegroundColor Gray
+    Write-Host ""
 }
 
-# ── 7. Résumé ─────────────────────────────────────────────────────────────────
-Write-Host ""
-Write-Host "  ════════════════════════════════════════════════════" -ForegroundColor Magenta
-OK "AVD '$AVD_NAME' créé avec succès !"
-Write-Host ""
-Write-Host "  Configuration :" -ForegroundColor White
-Write-Host "    Android 36 (API 36) · Google Play Store" -ForegroundColor Gray
-Write-Host "    Tablette 10'' 1920x1200 · 4 Go RAM · GPU host" -ForegroundColor Gray
-Write-Host "    Caméra front + back : webcam0 (Logitech BRIO)" -ForegroundColor Gray
-Write-Host ""
-
 # ── 8. Lancement émulateur ────────────────────────────────────────────────────
-:Launch
 $rep2 = Read-Host "  Lancer l'émulateur maintenant ? (O/n)"
 if ($rep2 -eq "n" -or $rep2 -eq "N") {
     Write-Host ""
@@ -189,6 +173,7 @@ INFO "Émulateur lancé (PID $($proc.Id)) — attente device ADB..."
 # Attendre que adb détecte l'émulateur (max 120s)
 $timeout = 120
 $elapsed = 0
+$devices = $null
 do {
     Start-Sleep -Seconds 3
     $elapsed += 3
