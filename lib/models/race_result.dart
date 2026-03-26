@@ -35,6 +35,8 @@ class RaceResult {
   final double? coeffPhysio;
   /// scorePlateforme_HR = finalTimeMs × coeffKb × coeffPhysio × coeffSexe
   final double? platformScoreHr;
+  // SPEC-KIT §3.5.5 — Phase 3.5 : reps détectées par CV Assist (null si non utilisé)
+  final int? cvRepCount;
 
   const RaceResult({
     this.id,
@@ -60,6 +62,7 @@ class RaceResult {
     this.trimp,
     this.coeffPhysio,
     this.platformScoreHr,
+    this.cvRepCount,
   });
 
   factory RaceResult.fromJson(Map<String, dynamic> json) {
@@ -92,6 +95,7 @@ class RaceResult {
       trimp: (json['trimp'] as num?)?.toDouble(),
       coeffPhysio: (json['coeff_physio'] as num?)?.toDouble(),
       platformScoreHr: (json['platform_score_hr'] as num?)?.toDouble(),
+      cvRepCount: json['cv_rep_count'] as int?,
     );
   }
 
@@ -117,5 +121,6 @@ class RaceResult {
     if (trimp != null) 'trimp': trimp,
     if (coeffPhysio != null) 'coeff_physio': coeffPhysio,
     if (platformScoreHr != null) 'platform_score_hr': platformScoreHr,
+    if (cvRepCount != null) 'cv_rep_count': cvRepCount,
   };
 }

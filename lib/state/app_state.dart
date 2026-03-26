@@ -2,6 +2,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/engine/energy_calculator.dart';
 import 'package:pentarun_flutter/engine/hr_calculator.dart';
+import 'package:pentarun_flutter/services/cv_rep_session.dart';
 import 'package:pentarun_flutter/services/hr_session_service.dart';
 import 'package:pentarun_flutter/services/offline_queue.dart';
 import 'package:pentarun_flutter/models/age_category.dart';
@@ -37,6 +38,35 @@ class AppState extends ChangeNotifier {
   // Toast
   String? _toast;
   String? get toast => _toast;
+
+  // SPEC-KIT §3.5.4 — Phase 3.5 : CV Assist feature flag + toggle session
+  bool _hasCvFeature = false;
+  bool _cvEnabled = false;
+  bool get hasCvFeature => _hasCvFeature;
+  bool get cvEnabled => _cvEnabled && _hasCvFeature;
+
+  /// Appelé quand le profil du juge est chargé (ProfileService)
+  void setCvFeature({required bool enabled}) {
+    _hasCvFeature = enabled;
+    notifyListeners();
+  }
+
+  /// Active / désactive le CV Assist pendant la course
+  void toggleCv() {
+    if (!_hasCvFeature) return;
+    _cvEnabled = !_cvEnabled;
+    if (!_cvEnabled) CvRepSession.instance.stop();
+    notifyListeners();
+  }
+
+  /// Incrémente le compteur CV de station pour un athlète (appelé depuis CvRepSession)
+  void updateCvRep(String athleteId) {
+    _athletes = _athletes.map((a) {
+      if (a.id != athleteId) return a;
+      return a.copyWith(cvStationReps: (a.cvStationReps ?? 0) + 1);
+    }).toList();
+    notifyListeners();
+  }
 
   // SPEC-KIT §7.1 — Phase 2.2 : contexte compétition (null = mode libre Phase 1)
   String? _currentWaveId;
@@ -196,11 +226,17 @@ class AppState extends ChangeNotifier {
           finalTimeMs: rawMs,
           officialScore: official,
           platformScore: platform,
+          // SPEC-KIT §3.5.4 : accumule la dernière station CV au total
+          cvTotalReps: (a.cvTotalReps ?? 0) + (a.cvStationReps ?? 0),
+          resetCvStation: true,
         );
       }
+      // Station intermédiaire : accumule les reps CV et réinitialise la station
       return a.copyWith(
         splits: [...a.splits, now],
         currentStation: next,
+        cvTotalReps: (a.cvTotalReps ?? 0) + (a.cvStationReps ?? 0),
+        resetCvStation: true,
       );
     }).toList();
     notifyListeners();
@@ -339,6 +375,8 @@ class AppState extends ChangeNotifier {
         trimp: hrMetrics?.trimp,
         coeffPhysio: hrMetrics?.coeffPhysio,
         platformScoreHr: hrMetrics?.platformScoreHr,
+        // SPEC-KIT §3.5.5 — CV total : inclut la dernière station (déjà accumulée)
+        cvRepCount: athlete.cvTotalReps,
       );
       // Fire-and-forget — SPEC-KIT §7.3
       ResultsService.saveResult(result);

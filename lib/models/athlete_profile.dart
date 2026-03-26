@@ -15,6 +15,8 @@ class AthleteProfile {
   final Level niveauHabituel;
   final int kbHabituelKg;
   final DateTime createdAt;
+  // SPEC-KIT §3.5.4 — Phase 3.5 : feature flags (ex: 'cv_rep_counting')
+  final List<String> features;
 
   const AthleteProfile({
     required this.id,
@@ -28,7 +30,11 @@ class AthleteProfile {
     required this.niveauHabituel,
     required this.kbHabituelKg,
     required this.createdAt,
+    this.features = const [],
   });
+
+  /// Retourne vrai si ce profil a le droit d'utiliser le CV Assist
+  bool get hasCvFeature => features.contains('cv_rep_counting');
 
   // SPEC-KIT §4.2 — Catégorie d'âge calculée dynamiquement
   int get age {
@@ -75,6 +81,10 @@ class AthleteProfile {
       niveauHabituel: Level.fromLabel(json['niveau_habituel'] as String),
       kbHabituelKg: json['kb_habituel_kg'] as int,
       createdAt: DateTime.parse(json['created_at'] as String),
+      features: (json['features'] as List?)
+              ?.map((e) => e as String)
+              .toList() ??
+          const [],
     );
   }
 

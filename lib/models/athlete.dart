@@ -35,6 +35,12 @@ class Athlete {
   // SPEC-KIT §6.3 — Phase 3 : métriques cardiaques (null si pas de capteur BLE)
   final HrMetrics? hrMetrics;
 
+  // SPEC-KIT §3.5.4 — Phase 3.5 : compteur CV Assist (null si feature non activée)
+  /// Reps comptées par CV sur la station en cours (reset à chaque VALIDER)
+  final int? cvStationReps;
+  /// Reps CV cumulées sur toutes les stations validées (accumule au VALIDER)
+  final int? cvTotalReps;
+
   const Athlete({
     required this.id,
     required this.name,
@@ -58,6 +64,8 @@ class Athlete {
     this.platformScore,
     this.waveAthleteId,
     this.hrMetrics,
+    this.cvStationReps,
+    this.cvTotalReps,
   });
 
   Athlete copyWith({
@@ -71,8 +79,11 @@ class Athlete {
     Uint8List? judgeSignature,
     Uint8List? athleteSignature,
     HrMetrics? hrMetrics,
+    int? cvStationReps,
+    int? cvTotalReps,
     bool clearFinalTime = false,
     bool clearOfficialScore = false,
+    bool resetCvStation = false,
   }) {
     return Athlete(
       id: id,
@@ -98,6 +109,8 @@ class Athlete {
       coeffSexe: coeffSexe,
       waveAthleteId: waveAthleteId,
       hrMetrics: hrMetrics ?? this.hrMetrics,
+      cvStationReps: resetCvStation ? 0 : (cvStationReps ?? this.cvStationReps),
+      cvTotalReps: cvTotalReps ?? this.cvTotalReps,
     );
   }
 }

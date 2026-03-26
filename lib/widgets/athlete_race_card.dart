@@ -243,6 +243,14 @@ class AthleteRaceCard extends StatelessWidget {
             ),
           ),
         ],
+        // SPEC-KIT §3.5.4 — Phase 3.5 : badge CV Assist si feature activée
+        if (state.cvEnabled && athlete.cvStationReps != null) ...[
+          const SizedBox(height: 8),
+          _CvBadge(
+            cvReps: athlete.cvStationReps!,
+            expectedReps: athlete.level.repsPerStation,
+          ),
+        ],
         const SizedBox(height: 12),
         // SPEC-KIT §6 — Fat Finger : ≥ 9rem (144px) obligatoire pour bouton VALIDER
         SizedBox(
@@ -393,4 +401,49 @@ class _StationRingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_StationRingPainter old) => old.current != current;
+}
+
+// ─── CV Assist Badge ──────────────────────────────────────────────────────────
+
+class _CvBadge extends StatelessWidget {
+  final int cvReps;
+  final int expectedReps;
+
+  const _CvBadge({required this.cvReps, required this.expectedReps});
+
+  @override
+  Widget build(BuildContext context) {
+    final discrepancy = (cvReps - expectedReps).abs();
+    final isAlert = cvReps > 0 && discrepancy > 2;
+    final color = isAlert ? A2Colors.ambre : A2Colors.vert;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        border: Border.all(color: color.withValues(alpha: 0.4)),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.videocam, size: 12, color: color),
+          const SizedBox(width: 5),
+          Text(
+            'CV: $cvReps / $expectedReps reps',
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w900,
+              fontSize: 11,
+              letterSpacing: 0.5,
+            ),
+          ),
+          if (isAlert) ...[
+            const SizedBox(width: 5),
+            Icon(Icons.warning_amber_rounded, size: 12, color: color),
+          ],
+        ],
+      ),
+    );
+  }
 }
