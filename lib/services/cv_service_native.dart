@@ -1,82 +1,114 @@
-// SPEC-KIT §3.5 — Phase 3.5 — Service CV natif (Android + iOS)
-// ─────────────────────────────────────────────────────────────────────────────
-// ACTIVATION BUILD NATIF :
-//   1. Ajouter dans pubspec.yaml :
-//        google_mlkit_pose_detection: ^0.12.0
-//        camera: ^0.11.0
-//   2. Android : minSdkVersion 21 dans android/app/build.gradle
-//   3. iOS : NSCameraUsageDescription dans Info.plist
-//   4. Décommenter les imports et l'implémentation ci-dessous
-//   5. flutter build apk --release  ou  flutter build ios --release
-// ─────────────────────────────────────────────────────────────────────────────
-// import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
-// import 'package:camera/camera.dart';
-import 'dart:async';
+// SPEC-KIT §3.5 — Phase 3.5 : CV Assist natif — MLKit Pose Detection + camera
+// Compilé uniquement sur Android + iOS (dart.library.io)
+// Exporté via cv_service.dart (conditional import)
 
-import 'package:pentarun_flutter/models/pose_landmark.dart';
+import 'dart:async';
+import 'dart:typed_data';
+import 'dart:ui' show Size;
+import 'package:camera/camera.dart';
+import 'package:google_mlkit_pose_detection/google_mlkit_pose_detection.dart';
+import 'package:pentarun_flutter/models/pose_landmark.dart' as app;
 
 class CvServiceImpl {
   CvServiceImpl._();
   static final CvServiceImpl instance = CvServiceImpl._();
 
-  bool get isSupported => true; // Disponible sur Android / iOS
+  bool get isSupported => true;
 
-  final _controller = StreamController<List<PoseLandmark>>.broadcast();
+  CameraController? _cameraController;
+  PoseDetector? _poseDetector;
+  bool _processing = false; // anti-pile-up : on skip les frames en cours de traitement
 
-  // ── Caméra ────────────────────────────────────────────────────────────────
+  final _controller = StreamController<List<app.PoseLandmark>>.broadcast();
+  Stream<List<app.PoseLandmark>> get landmarkStream => _controller.stream;
+
+  // ─── Start ────────────────────────────────────────────────────────────────
   Future<void> startCamera() async {
-    // TODO (camera + google_mlkit_pose_detection) :
-    //
-    // final cameras = await availableCameras();
-    // final front = cameras.firstWhere((c) => c.lensDirection == CameraLensDirection.front,
-    //   orElse: () => cameras.first);
-    // _cameraController = CameraController(front, ResolutionPreset.medium,
-    //   enableAudio: false, imageFormatGroup: ImageFormatGroup.bgra8888);
-    // await _cameraController!.initialize();
-    //
-    // _poseDetector = PoseDetector(options: PoseDetectorOptions(
-    //   mode: PoseDetectionMode.stream,
-    //   model: PoseDetectionModel.base,
-    // ));
-    //
-    // _cameraController!.startImageStream((CameraImage img) async {
-    //   final inputImage = _buildInputImage(img);
-    //   final poses = await _poseDetector!.processImage(inputImage);
-    //   if (poses.isNotEmpty) {
-    //     _controller.add(_mapLandmarks(poses.first));
-    //   }
-    // });
+    final cameras = await availableCameras();
+    // Préférence caméra frontale pour capturer le mouvement de l'athlète face au juge
+    final cam = cameras.firstWhere(
+      (c) => c.lensDirection == CameraLensDirection.front,
+      orElse: () => cameras.first,
+    );
+
+    _cameraController = CameraController(
+      cam,
+      ResolutionPreset.medium, // 720p — bon équilibre latence / qualité ML
+      enableAudio: false,
+      imageFormatGroup: ImageFormatGroup.nv21, // Android natif NV21
+    );
+    await _cameraController!.initialize();
+
+    // Mode stream — traitement continu frame par frame
+    _poseDetector = PoseDetector(
+      options: PoseDetectorOptions(
+        mode: PoseDetectionMode.stream,
+        model: PoseDetectionModel.base,
+      ),
+    );
+
+    _cameraController!.startImageStream((CameraImage img) async {
+      // Skip si frame précédente encore en cours — évite l'accumulation mémoire
+      if (_processing || _cameraController == null) return;
+      _processing = true;
+      try {
+        final poses = await _poseDetector!.processImage(_buildInputImage(img));
+        if (poses.isNotEmpty) {
+          _controller.add(_mapLandmarks(poses.first));
+        }
+      } finally {
+        _processing = false;
+      }
+    });
   }
 
+  // ─── Stop ─────────────────────────────────────────────────────────────────
   Future<void> stopCamera() async {
-    // TODO : await _cameraController?.stopImageStream();
-    //        await _cameraController?.dispose();
-    //        await _poseDetector?.close();
+    if (_cameraController != null &&
+        _cameraController!.value.isStreamingImages) {
+      await _cameraController!.stopImageStream();
+    }
+    await _cameraController?.dispose();
+    _cameraController = null;
+    await _poseDetector?.close();
+    _poseDetector = null;
   }
 
-  Stream<List<PoseLandmark>> get landmarkStream => _controller.stream;
+  // ─── Helpers ──────────────────────────────────────────────────────────────
 
-  // ── Mapping landmarks MediaPipe → PoseLandmark ────────────────────────────
-  // ignore: unused_element
-  List<PoseLandmark> _mapLandmarks(dynamic pose) {
-    // TODO (google_mlkit_pose_detection) :
-    // return (pose as Pose).landmarks.entries.map((e) {
-    //   return PoseLandmark(
-    //     index: e.key.index,
-    //     x: e.value.x,
-    //     y: e.value.y,
-    //     z: e.value.z,
-    //     confidence: e.value.likelihood,
-    //   );
-    // }).toList();
-    return [];
+  // Convertit CameraImage NV21 → InputImage MLKit
+  // NV21 = plan Y (luminance) + plan UV interleaved → concaténation directe
+  InputImage _buildInputImage(CameraImage img) {
+    final allBytes = BytesBuilder();
+    for (final plane in img.planes) {
+      allBytes.add(plane.bytes);
+    }
+    return InputImage.fromBytes(
+      bytes: allBytes.toBytes(),
+      metadata: InputImageMetadata(
+        size: Size(img.width.toDouble(), img.height.toDouble()),
+        rotation: InputImageRotation.rotation0deg,
+        format: InputImageFormat.nv21,
+        bytesPerRow: img.planes[0].bytesPerRow,
+      ),
+    );
   }
 
-  // ── Conversion CameraImage → InputImage ──────────────────────────────────
-  // ignore: unused_element
-  dynamic _buildInputImage(dynamic img) {
-    // TODO (camera + google_mlkit_pose_detection) :
-    // InputImage.fromBytes(bytes: ..., metadata: InputImageMetadata(...))
-    return null;
+  // Mappe les landmarks MLKit vers notre modèle PoseLandmark
+  // Indices MediaPipe : shoulder=11/12 · elbow=13/14 · wrist=15/16
+  List<app.PoseLandmark> _mapLandmarks(Pose pose) {
+    return pose.landmarks.entries
+        .map((e) => app.PoseLandmark(
+              index: e.key.index,
+              x: e.value.x,
+              y: e.value.y,
+              z: e.value.z,
+              confidence: e.value.likelihood,
+            ))
+        .toList();
+  }
+
+  void dispose() {
+    _controller.close();
   }
 }

@@ -1,14 +1,14 @@
+redirectsOrigin = "config"
 plugins = []
 headers = []
-redirects = []
 
 [functions]
 
 [functions."*"]
 
 [build]
-publish = "/mnt/c/Users/BXZN0117/Downloads/pentarun_flutter"
-publishOrigin = "default"
+publish = "/mnt/c/Users/BXZN0117/Downloads/pentarun_flutter/build/web"
+publishOrigin = "config"
 
 [build.environment]
 
@@ -23,3 +23,15 @@ publishOrigin = "default"
 [build.processing.js]
 
 [build.services]
+
+[[redirects]]
+from = "/*"
+to = "/index.html"
+status = 200.0
+force = false
+
+[redirects.query]
+
+[redirects.conditions]
+
+[redirects.headers]

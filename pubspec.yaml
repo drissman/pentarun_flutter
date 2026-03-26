@@ -16,7 +16,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 # https://developer.apple.com/library/archive/documentation/General/Reference/InfoPlistKeyReference/Articles/CoreFoundationKeys.html
 # In Windows, build-name is used as the major, minor, and patch parts
 # of the product and file versions while build-number is used as the build suffix.
-version: 2.0.0+1
+version: 3.5.0+1
 
 environment:
   sdk: ^3.10.7
@@ -40,6 +40,11 @@ dependencies:
   supabase_flutter: ^2.8.4
   # SPEC-KIT §9.4 — Phase 2.3 Sprint 4 — Export PDF fiche résultat
   pdf: ^3.11.0
+  # SPEC-KIT §6.2 — Phase 3 — BLE cardiofréquencemètre GATT 0x180D (Android + iOS)
+  flutter_blue_plus: ^1.35.0
+  # SPEC-KIT §3.5 — Phase 3.5 — CV Assist : pose estimation on-device (Android + iOS)
+  google_mlkit_pose_detection: ^0.12.0
+  camera: ^0.11.0
 
 dev_dependencies:
   flutter_test:
