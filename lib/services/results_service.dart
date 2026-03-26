@@ -70,4 +70,20 @@ class ResultsService {
       return [];
     }
   }
+
+  // ─── Records ──────────────────────────────────────────────────────────────
+
+  /// Records absolus par niveau : meilleur platform_score par (coeff_sexe × coeff_age)
+  /// SPEC-KIT §5.6 — Phase 2.3 Sprint 2 — Vue PostgreSQL `records`
+  static Future<List<RaceResult>> getRecords({required String level}) async {
+    try {
+      final data = await _client
+          .from('records')
+          .select('*, profiles(nom, prenom, sexe)')
+          .eq('level', level);
+      return (data as List).map((e) => RaceResult.fromJson(e)).toList();
+    } catch (_) {
+      return [];
+    }
+  }
 }
