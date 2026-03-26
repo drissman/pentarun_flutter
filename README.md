@@ -12,7 +12,7 @@ Plateforme de chronométrage et de compétition connectée pour le **PENTARUN** 
 ## Frameworks Méthodologiques
 
 ### OPENSPEC
-Cahier des charges fonctionnel et technique vivant. Chaque release est alignée sur une version OPENSPEC. → [`docs/OPENSPEC_PENTARUN_v2.0.md`](docs/OPENSPEC_PENTARUN_v2.0.md)
+Cahier des charges fonctionnel et technique vivant. Chaque release est alignée sur une version OPENSPEC. → [`docs/OPENSPEC_PENTARUN_v3.5.md`](docs/OPENSPEC_PENTARUN_v3.5.md)
 
 ### SPEC-KIT
 Matrice de conformité, protocole d'élagage, conventions de code. → [`docs/SPECKIT_GUIDE.md`](docs/SPECKIT_GUIDE.md)
