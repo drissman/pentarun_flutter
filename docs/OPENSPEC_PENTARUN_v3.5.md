@@ -1,10 +1,10 @@
 # OPENSPEC PENTARUN — v2.0
 
 > **Kinetic Axiom / KAFORGE**
-> Version : 3.5.1 — Ergonomie Racing + BLE Fiabilité + CV Full-Screen
-> Précédente version : 3.5 (CV Assist + HR Dynamique + Classements)
-> Date : 26 Mars 2026
-> Frameworks : OPENSPEC · SPEC-KIT v1.0 · A2UI v1.3
+> Version : 3.6.0 — BLE Web Chrome/Edge (Phase 3.6 livrée)
+> Précédente version : 3.5.1 (Ergonomie Racing + BLE Fiabilité + CV Full-Screen)
+> Date : 27 Mars 2026
+> Frameworks : OPENSPEC · SPEC-KIT v1.1 · A2UI v1.3
 
 ---
 
@@ -287,7 +287,7 @@ L'intégration HR est **optionnelle** pour l'athlète. En son absence, les coeff
 | Service GATT | Heart Rate Service — UUID `0x180D` |
 | Caractéristique | Heart Rate Measurement — UUID `0x2A37` |
 | Compatibilité | Polar H10, Garmin HRM, ceintures BLE standard |
-| Package Flutter | `flutter_blue_plus` (natif Android/iOS — stub no-op sur Web) |
+| Package Flutter | `flutter_blue_plus` (natif Android/iOS — stub no-op sur Web → Phase 3.6 : BLE Web Chrome/Edge) |
 | Connexion | Optionnelle, initiée par l'athlète avant le départ via SetupScreen |
 
 ### §6.3 — Métriques capturées
@@ -337,6 +337,64 @@ Si `hr_data` est absent :
 → `scorePlateforme` (statique) est utilisé
 
 **Les deux scores coexistent** — le classement général utilise `scorePlateforme` pour garantir la comparabilité entre athlètes avec et sans capteur.
+
+---
+
+### §6.7 — BLE Web (Phase 3.6) — Chrome/Edge uniquement
+
+L'intégration BLE Web permet d'utiliser un cardiofréquencemètre Polar H10 depuis un navigateur Chrome ou Edge, sur laptop ou smartphone Android.
+
+| Paramètre | Valeur |
+|---|---|
+| **API** | Web Bluetooth (W3C) |
+| **Service GATT** | Heart Rate Service — UUID `0x180D` |
+| **Caractéristique** | Heart Rate Measurement — UUID `0x2A37` |
+| **Compatibilité** | Chrome ✅ · Edge ✅ · Firefox ❌ · Safari ❌ |
+| **HTTPS requis** | Oui (Netlify assure HTTPS automatiquement) |
+| **Pairing** | Popup navigateur obligatoire (sécurité W3C, non contournable) |
+| **Auto-reconnect** | Partiel — `device.gatt.connect()` sans gesture si device mémorisé |
+| **Package Flutter** | `dart:js_interop` (intégré — aucun paquet supplémentaire) |
+| **Pattern** | `ble_service_web.dart` remplace `ble_service_stub.dart` (no-op) |
+
+**Fichiers Phase 3.6 :**
+- `lib/utils/web_bluetooth.dart` — déclarations JS interop (BluetoothDevice, GATT, Characteristic)
+- `lib/services/ble_service_web.dart` — implémentation Web Bluetooth (scan, connect, hrStream)
+
+**Comportement :**
+- `scan()` → ouvre le popup Chrome "Sélectionner un capteur Bluetooth"
+- `connect()` → connect GATT → getService(0x180D) → getCharacteristic(0x2A37) → startNotifications()
+- `hrStream` → émission des BPM en temps réel identique au service natif
+- `HrSessionService`, `HrCalculator`, `TRIMP` → **inchangés** (aucune dépendance plateforme)
+
+---
+
+### §6.8 — CV Web (Phase 3.7) — MediaPipe Pose (tous navigateurs)
+
+L'intégration CV Web permet le comptage automatique des répétitions depuis un navigateur via la webcam, en utilisant MediaPipe Pose Landmarker (Google, WASM).
+
+| Paramètre | Valeur |
+|---|---|
+| **Bibliothèque** | MediaPipe Pose Landmarker (Google, WASM) |
+| **Accès caméra** | `getUserMedia()` (API navigateur standard) |
+| **Compatibilité** | Chrome ✅ · Edge ✅ · Firefox ✅ · Safari ✅ |
+| **HTTPS requis** | Oui (`getUserMedia` bloqué en HTTP) |
+| **Landmarks** | 33 points de pose (identique MLKit) — format normalisé 0.0–1.0 |
+| **Latence estimée** | 20–50 ms (WASM) vs < 20 ms (MLKit natif) |
+| **Package Flutter** | `dart:js_interop` + `<script>` MediaPipe dans `web/index.html` |
+| **Pattern** | `cv_service_web.dart` remplace `cv_service_stub.dart` (no-op) |
+
+**Fichiers Phase 3.7 :**
+- `lib/utils/mediapipe_web.dart` — déclarations JS interop (PoseLandmarker, NormalizedLandmark)
+- `lib/services/cv_service_web.dart` — implémentation Web CV (getUserMedia, detect, landmarkStream)
+
+**Comportement :**
+- `startCamera()` → `getUserMedia({video: {facingMode: 'user'}})` — caméra frontale
+- `buildPreview()` → `HtmlElementView` Flutter Web (élément `<video>` navigateur)
+- `landmarkStream` → émission landmarks normalisés → `RepCounterEngine` **inchangé**
+- `CvRepSession`, `setCvStationReps()`, `_CvCounter` → **inchangés**
+- Invariant 1 athlète max si CV actif → **conservé**
+
+**Mapping landmarks MediaPipe → MLKit :** Les deux frameworks produisent les mêmes 33 landmarks (standard BlazePose). Le format diffère (normalisé 0.0–1.0 vs pixels) — une conversion linéaire est appliquée dans `cv_service_web.dart`.
 
 ---
 
@@ -482,6 +540,37 @@ Activation par l'admin via le dashboard Supabase (`UPDATE profiles SET features 
 - Ne transmet pas de vidéo à un serveur externe
 - Ne fonctionne pas si le device n'a pas de caméra frontale/arrière accessible
 
+### Phase 3.6 — BLE Web : Cardio depuis le navigateur ✅
+
+> **Dépend de :** Phase 3 ✅ · Voir §6.7 · **Livrée le 27 Mars 2026 — Déployée sur pentarun.netlify.app**
+
+| Sprint | Contenu | Statut |
+|---|---|---|
+| Sprint 1 | `lib/utils/web_bluetooth.dart` — JS interop BluetoothDevice, GATT, Characteristic, DataView | ✅ Livré |
+| Sprint 2 | `ble_service_web.dart` — scan popup Chrome, connect GATT, hrStream, reconnect `gattserverdisconnected` | ✅ Livré |
+| Sprint 3 | UI `_HrPairingCard` — bouton "CONNECTER POLAR H10", badge "WEB — CHROME", auto-connect, `_webError` | ✅ Livré |
+| Sprint 4 | Reconnexion partielle + catégorisation erreurs (NotFoundError, SecurityError, NotSupportedError) | ✅ Livré |
+| Sprint 5 | Tests terrain — Chrome Desktop + Polar H10, Chrome Android, scénarios reconnexion | 🔧 En cours |
+
+**Support :** Chrome ✅ · Edge ✅ · Firefox ❌ · Safari ❌ (limite W3C — §9.4 Élagage)
+
+---
+
+### Phase 3.7 — CV Web : Comptage reps depuis le navigateur 📋
+
+> **Dépend de :** Phase 3.5 ✅ (RepCounterEngine + CvRepSession déjà livrés) · Voir §6.8
+
+- **Sprint 1** : Chargement MediaPipe (`web/index.html` + `lib/utils/mediapipe_web.dart`) — PoseLandmarker WASM, gestion loading asynchrone
+- **Sprint 2** : Accès caméra Web — `getUserMedia()` + `HtmlElementView` Flutter Web, extraction de frames vidéo
+- **Sprint 3** : Pipeline détection — `PoseLandmarker.detectForVideo()`, conversion NormalizedLandmark→PoseLandmark, émission landmarkStream
+- **Sprint 4** : `cv_service_web.dart` complet — `buildPreview()`, `startCamera()`, `stopCamera()`, `isSupported = true`
+- **Sprint 5** : UI — suppression badge "CV NON DISPO" sur Web, aperçu webcam dans SetupScreen
+- **Sprint 6** : Performance & Tests — optimisation frame rate (cible 15–30 fps WASM), validation RepCounterEngine, comparaison reps MLKit vs MediaPipe
+
+**Estimation :** 23 jours développeur · **Support :** Chrome ✅ · Edge ✅ · Firefox ✅ · Safari ✅
+
+---
+
 ### Phase 4 — Module Coaching Solaris
 - VMA, Vitesse Critique (élagués v1.x, réservés ici)
 - Charge hebdomadaire : TRIMP cumulé sur 7 jours (nécessite Phase 3)
@@ -583,6 +672,29 @@ Activation par l'admin via le dashboard Supabase (`UPDATE profiles SET features 
 | AndroidManifest — BLUETOOTH_SCAN/CONNECT + CAMERA | §6.2 §3.5 | ✅ Activé natif |
 | APK Android release 95.9 MB | §6.2 §3.5 | ✅ Build validé |
 
+### §9.3ter — Phase 3.6 (BLE Web) — Livrée 27 Mars 2026
+
+| Exigence | Référence | État |
+|---|---|---|
+| `lib/utils/web_bluetooth.dart` — JS interop BluetoothDevice / GATT / Characteristic / DataView + `requestHeartRateDevice()` | §6.7 | ✅ Livré Sprint 1 |
+| `ble_service_web.dart` — scan popup Chrome, connect GATT, hrStream, `gattserverdisconnected`, disconnect propre | §6.7 | ✅ Livré Sprint 2 |
+| `_HrPairingCard` Web — bouton "CONNECTER POLAR H10", badge "WEB — CHROME", note Chrome/Edge, `_webError`, auto-connect | §6.7 | ✅ Livré Sprint 3 |
+| Gestion erreurs — NotFoundError (annulé silencieux), SecurityError, NotSupportedError (Firefox/Safari) | §6.7 | ✅ Livré Sprint 4 |
+| `ble_service.dart` — export conditionnel mis à jour : `ble_service_web.dart` (web) | §6.7 | ✅ Livré Sprint 2 |
+| Déploiement Netlify prod — `flutter build web --release` + `netlify deploy --prod` | §6.7 | ✅ Déployé 27 Mars 2026 |
+| Tests terrain Chrome Desktop + Polar H10, Chrome Android, scénarios reconnexion | §6.7 | 🔧 Sprint 5 en cours |
+
+### §9.3quater — Phase 3.7 (CV Web)
+
+| Exigence | Référence | État |
+|---|---|---|
+| MediaPipe chargé via `web/index.html` + `mediapipe_web.dart` JS interop | §6.8 | 📋 Phase 3.7 Sprint 1 |
+| Accès caméra `getUserMedia()` + `HtmlElementView` Flutter Web | §6.8 | 📋 Phase 3.7 Sprint 2 |
+| Pipeline détection — `PoseLandmarker.detectForVideo()` + conversion landmarks | §6.8 | 📋 Phase 3.7 Sprint 3 |
+| `cv_service_web.dart` — `buildPreview()`, `startCamera()`, `stopCamera()`, `isSupported = true` | §6.8 | 📋 Phase 3.7 Sprint 4 |
+| UI — aperçu webcam SetupScreen Web, suppression badge NON DISPO | §6.8 | 📋 Phase 3.7 Sprint 5 |
+| Tests performance WASM (cible 15–30 fps), validation RepCounterEngine vs MLKit natif | §6.8 | 📋 Phase 3.7 Sprint 6 |
+
 ### §9.4 — Élagage documenté
 
 | Feature | Justification | Réservé |
@@ -592,6 +704,7 @@ Activation par l'admin via le dashboard Supabase (`UPDATE profiles SET features 
 | ANT+ (capteurs Garmin pro) | Requiert hardware spécial non BLE standard | Phase 5+ |
 | Calibration terrain CV (seuils par niveau) | Nécessite données gymnase réelles — phase test terrain | Phase 3.5 v2 |
 | Calculs coaching serveur | Calculs périodisation lourds — recommandé sur VPS Phase 5 | Phase 4 optionnel |
+| BLE sur Firefox / Safari | Limite spécification W3C — Web Bluetooth non implémenté par ces navigateurs, non contournable par le code | ❌ Hors scope |
 
 ---
 
@@ -758,5 +871,28 @@ Ce code s'exécute avant la construction de `_AuthGate`, garantissant que la ses
 
 ---
 
-*OPENSPEC PENTARUN v3.5.1 · KAFORGE · Kinetic Axiom*
-*Conforme SPEC-KIT v1.0 · A2UI v1.3 — Phase 4 = Coaching Solaris · Phase 5 = Infrastructure Souveraine*
+---
+
+## §12 — Matrice de couverture plateforme
+
+> **Phase 3.6 livrée** (27 Mars 2026) · Phase 3.7 planifiée
+
+| Fonctionnalité | Web Chrome/Edge | Web Firefox/Safari | Android APK |
+|---|---|---|---|
+| Authentification (email, Google OAuth) | ✅ | ✅ | ✅ |
+| Gestion compétitions (CRUD) | ✅ | ✅ | ✅ |
+| Chrono live + résultats temps réel | ✅ | ✅ | ✅ |
+| Historique résultats | ✅ | ✅ | ✅ |
+| PDF génération | ✅ | ✅ | ✅ |
+| PDF téléchargement (blob navigateur) | ✅ | ✅ | ❌ |
+| Mode spectateur (`/#/live/{id}`) | ✅ | ✅ | ❌ |
+| Offline queue (localStorage) | ✅ | ✅ | ❌ |
+| **BLE Cardio — Phase 3.6** | ✅ Livré | ❌ (W3C) | ✅ |
+| **CV Comptage reps — Phase 3.7** | 📋 Planifié | 📋 Planifié | ✅ |
+
+**Couverture cible :** 99% — seul BLE manquant sur Firefox/Safari (limite spécification W3C, non contournable par le code)
+
+---
+
+*OPENSPEC PENTARUN v3.6 · KAFORGE · Kinetic Axiom*
+*Conforme SPEC-KIT v1.0 · A2UI v1.3 — Phase 3.6 = BLE Web · Phase 3.7 = CV Web · Phase 4 = Coaching Solaris · Phase 5 = Infrastructure Souveraine*

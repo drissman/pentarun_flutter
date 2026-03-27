@@ -425,8 +425,56 @@ Avant tout merge / release, valider :
 | `device.connect()` sans try-catch | Samsung Galaxy A54 / Huawei : requestMtu lance une exception non bloquante → wrapper en try-catch → §11.9 ERRATA |
 | BLE sans auto-reconnect | Reconnexion perdue = session HR perdue en pleine course → `_scheduleReconnect()` obligatoire → §11.9 ERRATA |
 | Feature native-only sans pattern stub/native | BLE et CV ne compilent pas sur Flutter Web → toujours stub + conditional export dart.library.io |
+| Web Bluetooth sans HTTPS | getUserMedia() et Web Bluetooth bloqués sur HTTP → Phase 3.6/3.7 nécessitent HTTPS (Netlify OK) → §6.7 §6.8 |
+| requestDevice() hors gesture utilisateur | Web Bluetooth exige un gesture (clic) pour ouvrir le popup — appel programmatique silencieusement ignoré → §6.7 |
+| JS interop Promise sans .toDart | Les API navigateur retournent des JS Promise — utiliser `.toDart` (dart:js_interop) pour les convertir en Future → §6.7 §6.8 |
+| MediaPipe avant chargement WASM | PoseLandmarker.create() est async — appeler detectForVideo() avant le chargement WASM provoque un crash silencieux → §6.8 |
 | `const Map<double, double>` avec clés double | Dart interdit les const map avec clés double (équality non primitive) → utiliser if/else chain → cf. HrCalculator |
 
 ---
 
-*SPEC-KIT v1.0 · KAFORGE · Kinetic Axiom — Phase 3.5 livrée · Phase 4 = Coaching Solaris · Phase 5 = Infrastructure Souveraine*
+---
+
+## 8. Roadmap Phase 3.6 + 3.7 — Parité Web/APK
+
+### Phase 3.6 — BLE Web (Chrome/Edge) ✅ — Livrée le 27 Mars 2026
+
+> Rend le cardio BLE (Polar H10) fonctionnel depuis Chrome/Edge sur laptop et smartphone.
+> Déployée sur https://pentarun.netlify.app — Deploy ID : 69c6f8eeba4976cb24f03724
+
+| Sprint | Livrable | Durée | Statut |
+|---|---|---|---|
+| Sprint 1 | `web_bluetooth.dart` — JS interop BluetoothDevice / GATT / DataView | 5 j | ✅ Livré |
+| Sprint 2 | `ble_service_web.dart` — scan, connect, hrStream, disconnect | 5 j | ✅ Livré |
+| Sprint 3 | `_HrPairingCard` Web — bouton CONNECTER, badge WEB—CHROME, auto-connect | 3 j | ✅ Livré |
+| Sprint 4 | Reconnexion `gattserverdisconnected` + catégorisation erreurs (NotFoundError, SecurityError, NotSupportedError) | 3 j | ✅ Livré |
+| Sprint 5 | Tests terrain — Chrome Desktop + Polar H10, Chrome Android, scénarios reconnexion | 4 j | 🔧 En cours |
+
+**Contraintes :** Chrome/Edge uniquement (Web Bluetooth W3C) · HTTPS requis · Popup pairing obligatoire
+
+### Phase 3.7 — CV Web (MediaPipe, tous navigateurs) — 23 jours estimés
+
+> Rend le comptage de reps par caméra fonctionnel dans tous les navigateurs modernes.
+
+| Sprint | Livrable | Durée |
+|---|---|---|
+| Sprint 1 | `mediapipe_web.dart` + chargement WASM dans `web/index.html` | 3 j |
+| Sprint 2 | Accès caméra `getUserMedia()` + `HtmlElementView` Flutter Web | 4 j |
+| Sprint 3 | Pipeline `PoseLandmarker.detectForVideo()` + conversion landmarks | 5 j |
+| Sprint 4 | `cv_service_web.dart` complet — `buildPreview()`, `startCamera()`, `stopCamera()` | 4 j |
+| Sprint 5 | UI — aperçu webcam SetupScreen Web | 2 j |
+| Sprint 6 | Tests performance WASM (cible 15–30 fps) + validation RepCounterEngine | 5 j |
+
+**Compatible :** Chrome ✅ · Edge ✅ · Firefox ✅ · Safari ✅ · HTTPS requis
+
+### Couverture cible après 3.6 + 3.7
+
+| Plateforme | BLE Cardio | CV Reps | Score |
+|---|---|---|---|
+| Chrome / Edge (laptop + Android) | ✅ | ✅ | 10/10 |
+| Firefox / Safari | ❌ (W3C) | ✅ | 9/10 |
+| Android APK | ✅ | ✅ | 10/10 |
+
+---
+
+*SPEC-KIT v1.1 · KAFORGE · Kinetic Axiom — Phase 3.5 livrée · Phase 3.6 = BLE Web ✅ livrée 2026-03-27 · Phase 3.7 = CV Web 📋 · Phase 4 = Coaching Solaris · Phase 5 = Infrastructure Souveraine*

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:pentarun_flutter/models/energy_breakdown.dart';
 import 'package:pentarun_flutter/models/hr_device.dart';
@@ -433,14 +434,32 @@ class _HrPairingCardState extends State<_HrPairingCard> {
   List<HrDevice> _found = [];
   bool _scanning = false;
   bool _connecting = false;
+  // SPEC-KIT §6.7 — Phase 3.6 : message d'erreur navigateur incompatible (web)
+  String? _webError;
 
   Future<void> _scan() async {
     if (!_hr.bleSupported || _scanning) return;
-    setState(() { _scanning = true; _found = []; });
-    await for (final devices in _hr.scan(timeout: const Duration(seconds: 5))) {
+    setState(() { _scanning = true; _found = []; _webError = null; });
+    // Web : timeout 30s (popup Chrome peut rester ouvert longtemps)
+    // Natif : timeout 5s (scan passif BLE)
+    final timeout = kIsWeb
+        ? const Duration(seconds: 30)
+        : const Duration(seconds: 5);
+    await for (final devices in _hr.scan(timeout: timeout)) {
       if (mounted) setState(() => _found = devices);
     }
-    if (mounted) setState(() => _scanning = false);
+    if (mounted) {
+      setState(() => _scanning = false);
+      // Web : si aucun device → popup annulé ou navigateur incompatible
+      if (kIsWeb && _found.isEmpty) {
+        setState(() => _webError = 'Annulé ou navigateur incompatible (Chrome/Edge requis).');
+      }
+    }
+    // SPEC-KIT §6.7 — Web : auto-connect après sélection dans le popup Chrome
+    // Sur Web, l'utilisateur a déjà "choisi" le capteur dans le popup → connexion directe
+    if (kIsWeb && _found.isNotEmpty && mounted) {
+      await _connect(_found.first);
+    }
   }
 
   Future<void> _connect(HrDevice d) async {
@@ -518,17 +537,18 @@ class _HrPairingCardState extends State<_HrPairingCard> {
                 ),
               ),
               child: Text(
+                // SPEC-KIT §6.7 — Phase 3.6 : badge Web Chrome/Edge
                 connected
                     ? 'CONNECTÉ'
-                    : supported
-                        ? 'NATIF'
-                        : 'WEB — NON DISPO',
+                    : kIsWeb
+                        ? 'WEB — CHROME'
+                        : 'NATIF',
                 style: TextStyle(
                   color: connected
                       ? A2Colors.vert
-                      : supported
-                          ? A2Colors.ambre
-                          : A2Colors.border2,
+                      : kIsWeb
+                          ? A2Colors.cyan
+                          : A2Colors.ambre,
                   fontSize: 8,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1,
@@ -538,10 +558,9 @@ class _HrPairingCardState extends State<_HrPairingCard> {
           ]),
           const SizedBox(height: 10),
           if (!supported)
-            // Message Web
+            // Fallback si ble_service_stub.dart est actif (cas théorique)
             const Text(
-              'BLE disponible uniquement sur l\'app mobile native.\n'
-              'Compilez avec flutter build apk pour activer le capteur HR.',
+              'BLE non disponible sur cette plateforme.',
               style: TextStyle(color: A2Colors.gris1, fontSize: 10),
             )
           else if (connected && device != null) ...[
@@ -561,57 +580,109 @@ class _HrPairingCardState extends State<_HrPairingCard> {
               ),
             ),
           ] else ...[
-            // Scan + liste
-            Row(children: [
-              Expanded(
-                child: _connecting
-                    ? const Text('Connexion en cours...',
-                        style: TextStyle(color: A2Colors.cyan, fontSize: 10))
-                    : _found.isEmpty
-                        ? Text(
-                            _scanning ? 'Recherche en cours...' : 'Aucun capteur trouvé.',
-                            style: const TextStyle(color: A2Colors.gris1, fontSize: 10))
-                        : Wrap(
-                            spacing: 8,
-                            runSpacing: 6,
-                            children: _found.map((d) => InkWell(
-                              onTap: () => _connect(d),
-                              borderRadius: BorderRadius.circular(6),
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: A2Colors.surface,
-                                  borderRadius: BorderRadius.circular(6),
-                                  border: Border.all(color: A2Colors.cyan.withValues(alpha: 0.5)),
-                                ),
-                                child: Text(d.name,
-                                    style: const TextStyle(
-                                        color: A2Colors.cyan, fontSize: 10,
-                                        fontWeight: FontWeight.w900)),
-                              ),
-                            )).toList(),
-                          ),
-              ),
-              const SizedBox(width: 12),
-              InkWell(
-                onTap: _scanning ? null : _scan,
-                borderRadius: BorderRadius.circular(8),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: A2Colors.surface,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: A2Colors.border2),
+            // SPEC-KIT §6.7 — Phase 3.6 : UI différenciée Web vs Natif
+            if (kIsWeb) ...[
+              // ── Web : bouton plein-largeur → ouvre le popup Chrome ──────────
+              SizedBox(
+                width: double.infinity,
+                height: 40,
+                child: ElevatedButton.icon(
+                  onPressed: (_scanning || _connecting) ? null : _scan,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: A2Colors.cyanDark,
+                    foregroundColor: A2Colors.blanc,
+                    disabledBackgroundColor: A2Colors.surface,
+                    disabledForegroundColor: A2Colors.gris1,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: _scanning
+                  icon: (_scanning || _connecting)
                       ? const SizedBox(
                           width: 14, height: 14,
                           child: CircularProgressIndicator(
-                              color: A2Colors.cyan, strokeWidth: 2))
-                      : const Icon(Icons.bluetooth_searching, color: A2Colors.cyan, size: 18),
+                              color: A2Colors.blanc, strokeWidth: 2))
+                      : const Icon(Icons.bluetooth, size: 16),
+                  label: Text(
+                    _connecting
+                        ? 'CONNEXION EN COURS...'
+                        : _scanning
+                            ? 'SÉLECTION EN COURS...'
+                            : 'CONNECTER POLAR H10',
+                    style: const TextStyle(
+                        fontWeight: FontWeight.w900,
+                        fontSize: 11,
+                        letterSpacing: 1.2),
+                  ),
                 ),
               ),
-            ]),
+              const SizedBox(height: 6),
+              const Text(
+                'Chrome / Edge requis  ·  HTTPS',
+                style: TextStyle(color: A2Colors.gris1, fontSize: 9),
+              ),
+              if (_webError != null) ...[
+                const SizedBox(height: 4),
+                Text(_webError!,
+                    style: const TextStyle(
+                        color: A2Colors.ambre, fontSize: 9)),
+              ],
+            ] else ...[
+              // ── Natif : scan passif + chips de sélection (inchangé) ─────────
+              Row(children: [
+                Expanded(
+                  child: _connecting
+                      ? const Text('Connexion en cours...',
+                          style: TextStyle(color: A2Colors.cyan, fontSize: 10))
+                      : _found.isEmpty
+                          ? Text(
+                              _scanning ? 'Recherche en cours...' : 'Aucun capteur trouvé.',
+                              style: const TextStyle(color: A2Colors.gris1, fontSize: 10))
+                          : Wrap(
+                              spacing: 8,
+                              runSpacing: 6,
+                              children: _found.map((d) => InkWell(
+                                onTap: () => _connect(d),
+                                borderRadius: BorderRadius.circular(6),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: 10, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: A2Colors.surface,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                        color: A2Colors.cyan.withValues(alpha: 0.5)),
+                                  ),
+                                  child: Text(d.name,
+                                      style: const TextStyle(
+                                          color: A2Colors.cyan,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w900)),
+                                ),
+                              )).toList(),
+                            ),
+                ),
+                const SizedBox(width: 12),
+                InkWell(
+                  onTap: _scanning ? null : _scan,
+                  borderRadius: BorderRadius.circular(8),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: A2Colors.surface,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: A2Colors.border2),
+                    ),
+                    child: _scanning
+                        ? const SizedBox(
+                            width: 14, height: 14,
+                            child: CircularProgressIndicator(
+                                color: A2Colors.cyan, strokeWidth: 2))
+                        : const Icon(Icons.bluetooth_searching,
+                            color: A2Colors.cyan, size: 18),
+                  ),
+                ),
+              ]),
+            ],
           ],
         ],
       ),
